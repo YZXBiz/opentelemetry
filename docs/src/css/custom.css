@@ -1,0 +1,63 @@
+/**
+ * OpenTelemetry Guide custom styles
+ * Blue theme for professional technical documentation
+ */
+
+:root {
+  --ifm-color-primary: #4a90d9;
+  --ifm-color-primary-dark: #3580d1;
+  --ifm-color-primary-darker: #2d78c9;
+  --ifm-color-primary-darkest: #2563a6;
+  --ifm-color-primary-light: #5fa0e1;
+  --ifm-color-primary-lighter: #6ba8e4;
+  --ifm-color-primary-lightest: #8fbfec;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #6ba8e4;
+  --ifm-color-primary-dark: #4d96de;
+  --ifm-color-primary-darker: #3d8bda;
+  --ifm-color-primary-darkest: #2a71b8;
+  --ifm-color-primary-light: #89baea;
+  --ifm-color-primary-lighter: #99c4ee;
+  --ifm-color-primary-lightest: #c7def6;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Insight boxes - special styling for blockquotes */
+blockquote {
+  border-left: 4px solid var(--ifm-color-primary);
+  background-color: rgba(74, 144, 217, 0.1);
+  padding: 1rem;
+  border-radius: 0 8px 8px 0;
+}
+
+[data-theme='dark'] blockquote {
+  background-color: rgba(107, 168, 228, 0.1);
+}
+
+/* Table of Contents styling */
+.table-of-contents {
+  font-size: 0.95rem;
+}
+
+/* Code block enhancements */
+.prism-code {
+  border-radius: 8px;
+}
+
+/* Better heading spacing */
+.markdown h2 {
+  margin-top: 2rem;
+}
+
+.markdown h3 {
+  margin-top: 1.5rem;
+}
+
+/* Navigation links at bottom of pages */
+.pagination-nav {
+  margin-top: 2rem;
+}
