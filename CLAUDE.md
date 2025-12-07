@@ -143,6 +143,12 @@ Use for key knowledge that connects concepts:
 | **Callouts** | 💡 Insight · ⚠️ Warning · 📝 Note · 🎓 Learning · 🔒 Security |
 | **Content** | 💻 Code · 🖥️ Systems · 🌐 Network · ⏱️ Performance · 📊 Metrics |
 
+### Content Rules
+
+- ❌ **No footnotes** — Keep all content inline, don't use `[^1]` style footnotes
+- ❌ **No Mermaid** — Use React diagram components instead
+- ✅ **Inline explanations** — Put context directly where it's needed
+
 ---
 
 ## 4. Design System
@@ -440,6 +446,7 @@ colors.pink    // #ec4899
 - [ ] Clear progression from simple to advanced
 - [ ] Concepts connected to broader patterns
 - [ ] React diagrams for all visual flows (no Mermaid)
+- [ ] No footnotes — keep all content inline
 - [ ] Dark mode works correctly
 - [ ] Mobile responsive
 
