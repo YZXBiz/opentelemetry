@@ -1,6 +1,6 @@
 # Technical Documentation Template
 
-_Complete Docusaurus setup with CVS Red theme, React diagrams, and pedagogical content design_
+_Complete Docusaurus setup with custom theme, React diagrams, and pedagogical content design_
 
 ---
 
@@ -32,7 +32,7 @@ Copy these to your project:
 
 | File | Location | Purpose |
 |------|----------|---------|
-| `custom.css` | `docs/src/css/custom.css` | Full CVS Red theme |
+| `custom.css` | `docs/src/css/custom.css` | Full custom theme |
 | `Diagram.tsx` | `docs/src/components/diagrams/Diagram.tsx` | React diagram system |
 | `Diagram.module.css` | `docs/src/components/diagrams/Diagram.module.css` | Diagram styles |
 
@@ -153,7 +153,7 @@ Use for key knowledge that connects concepts:
 
 ## 4. Design System
 
-### CVS Red Color Palette
+### Color Palette
 
 | Token | Light | Dark | Usage |
 |-------|-------|------|-------|
