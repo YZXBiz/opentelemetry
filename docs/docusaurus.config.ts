@@ -5,17 +5,13 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'OpenTelemetry Guide',
   tagline: 'Master OpenTelemetry for Modern Observability',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/logo.svg',
 
   future: {
     v4: true,
   },
 
-  // Enable Mermaid diagrams
-  markdown: {
-    mermaid: true,
-  },
-  themes: ['@docusaurus/theme-mermaid', '@docusaurus/theme-live-codeblock'],
+  themes: ['@docusaurus/theme-live-codeblock'],
 
   // GitHub Pages deployment configuration
   url: 'https://YZXBiz.github.io',
