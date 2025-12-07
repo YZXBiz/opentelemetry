@@ -4,7 +4,7 @@ title: "Chapter 8: Designing Telemetry Pipelines"
 description: "Collector topologies, filtering, sampling, transformation, and managing telemetry at scale"
 ---
 
-import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram, ArchitectureDiagram } from '@site/src/components/diagrams';
+import { CardGrid, TreeDiagram, Row, Box, Arrow, Column, Group, DiagramContainer, ProcessFlow, StackDiagram, colors } from '@site/src/components/diagrams';
 
 # 🌊 Chapter 8: Designing Telemetry Pipelines
 
@@ -49,17 +49,21 @@ import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram, Architec
 
 The simplest setup: SDKs export directly to backends.
 
-```mermaid
-graph LR
-    App1[App 1] --> Backend[Backend]
-    App2[App 2] --> Backend
-    App3[App 3] --> Backend
-
-    style App1 fill:#3b82f6,color:#fff
-    style App2 fill:#3b82f6,color:#fff
-    style App3 fill:#3b82f6,color:#fff
-    style Backend fill:#8b5cf6,color:#fff
-```
+<DiagramContainer title="No Collector Topology">
+  <Row gap="lg" align="center">
+    <Column gap="md">
+      <Box color={colors.blue}>App 1</Box>
+      <Box color={colors.blue}>App 2</Box>
+      <Box color={colors.blue}>App 3</Box>
+    </Column>
+    <Column gap="md" align="center">
+      <Arrow direction="right" />
+      <Arrow direction="right" />
+      <Arrow direction="right" />
+    </Column>
+    <Box color={colors.purple} size="lg">Backend</Box>
+  </Row>
+</DiagramContainer>
 
 **When this works:**
 
@@ -75,19 +79,31 @@ graph LR
 
 Run a Collector on each host alongside your applications.
 
-```mermaid
-graph LR
-    subgraph Host["Host"]
-        App1[App] --> Collector[Collector<br/>local<br/>+ Host Metrics]
-        App2[App] --> Collector
-    end
-    Collector --> Backend[Backend]
-
-    style App1 fill:#3b82f6,color:#fff
-    style App2 fill:#3b82f6,color:#fff
-    style Collector fill:#10b981,color:#fff
-    style Backend fill:#8b5cf6,color:#fff
-```
+<DiagramContainer title="Local Collector Topology">
+  <Group title="Host" color={colors.slate}>
+    <Column gap="md" align="center">
+      <Row gap="md">
+        <Box color={colors.blue}>App</Box>
+        <Arrow direction="right" />
+        <Box color={colors.green} size="lg">
+          Collector
+          <br />
+          local
+          <br />
+          + Host Metrics
+        </Box>
+      </Row>
+      <Row gap="md">
+        <Box color={colors.blue}>App</Box>
+        <Arrow direction="right" />
+      </Row>
+      <Row gap="lg" align="center">
+        <Arrow direction="right" />
+        <Box color={colors.purple} size="lg">Backend</Box>
+      </Row>
+    </Column>
+  </Group>
+</DiagramContainer>
 
 **Benefits of local Collectors:**
 
@@ -116,35 +132,31 @@ export:
 
 Add a pool of Collectors for additional processing and buffering.
 
-```mermaid
-graph LR
-    LC1[App + Local<br/>Collector] --> LB[Load Balancer]
-    LC2[App + Local<br/>Collector] --> LB
-    LC3[App + Local<br/>Collector] --> LB
-
-    subgraph Pool["Collector Pool"]
-        Col1[Collector]
-        Col2[Collector]
-        Col3[Collector]
-    end
-
-    LB --> Col1
-    LB --> Col2
-    LB --> Col3
-
-    Col1 --> Backend[Backend]
-    Col2 --> Backend
-    Col3 --> Backend
-
-    style LC1 fill:#3b82f6,color:#fff
-    style LC2 fill:#3b82f6,color:#fff
-    style LC3 fill:#3b82f6,color:#fff
-    style LB fill:#f59e0b,color:#fff
-    style Col1 fill:#10b981,color:#fff
-    style Col2 fill:#10b981,color:#fff
-    style Col3 fill:#10b981,color:#fff
-    style Backend fill:#8b5cf6,color:#fff
-```
+<DiagramContainer title="Collector Pool Topology">
+  <Column gap="lg" align="center">
+    <Row gap="md">
+      <Box color={colors.blue}>App + Local Collector</Box>
+      <Arrow direction="right" />
+      <Row gap="sm">
+        <Box color={colors.blue}>App + Local Collector</Box>
+        <Arrow direction="right" />
+        <Box color={colors.orange} size="lg">Load Balancer</Box>
+      </Row>
+      <Arrow direction="left" />
+      <Box color={colors.blue}>App + Local Collector</Box>
+    </Row>
+    <Arrow direction="down" />
+    <Group title="Collector Pool" color={colors.green}>
+      <Row gap="md">
+        <Box color={colors.green}>Collector</Box>
+        <Box color={colors.green}>Collector</Box>
+        <Box color={colors.green}>Collector</Box>
+      </Row>
+    </Group>
+    <Arrow direction="down" />
+    <Box color={colors.purple} size="lg">Backend</Box>
+  </Column>
+</DiagramContainer>
 
 **Why use Collector pools:**
 
@@ -159,24 +171,41 @@ graph LR
 
 For complex needs, create specialized Collector deployments:
 
-```mermaid
-graph LR
-    Gateway[Gateway<br/>Collector] --> TracesCol[Traces Collector<br/>tail sampling]
-    Gateway --> MetricsCol[Metrics Collector<br/>aggregation]
-    Gateway --> LogsCol[Logs Collector<br/>parsing]
-
-    TracesCol --> TracesBackend[Traces Backend]
-    MetricsCol --> MetricsBackend[Metrics Backend]
-    LogsCol --> LogsBackend[Logs Backend]
-
-    style Gateway fill:#f59e0b,color:#fff
-    style TracesCol fill:#3b82f6,color:#fff
-    style MetricsCol fill:#10b981,color:#fff
-    style LogsCol fill:#8b5cf6,color:#fff
-    style TracesBackend fill:#3b82f6,color:#fff
-    style MetricsBackend fill:#10b981,color:#fff
-    style LogsBackend fill:#8b5cf6,color:#fff
-```
+<DiagramContainer title="Gateway and Specialized Collectors">
+  <Column gap="lg" align="center">
+    <Box color={colors.orange} size="lg">Gateway Collector</Box>
+    <Arrow direction="down" />
+    <Row gap="lg">
+      <Column gap="md" align="center">
+        <Box color={colors.blue}>
+          Traces Collector
+          <br />
+          tail sampling
+        </Box>
+        <Arrow direction="down" />
+        <Box color={colors.blue}>Traces Backend</Box>
+      </Column>
+      <Column gap="md" align="center">
+        <Box color={colors.green}>
+          Metrics Collector
+          <br />
+          aggregation
+        </Box>
+        <Arrow direction="down" />
+        <Box color={colors.green}>Metrics Backend</Box>
+      </Column>
+      <Column gap="md" align="center">
+        <Box color={colors.purple}>
+          Logs Collector
+          <br />
+          parsing
+        </Box>
+        <Arrow direction="down" />
+        <Box color={colors.purple}>Logs Backend</Box>
+      </Column>
+    </Row>
+  </Column>
+</DiagramContainer>
 
 **Reasons for specialized Collectors:**
 
@@ -220,36 +249,41 @@ processors:
 
 **Sampling:** Keep a representative subset of data.
 
-```mermaid
-graph TD
-    subgraph Head["Head-Based Sampling"]
-        H1[Decision at trace START]
-        H2[Simple: Keep 10% of traces]
-        H3[Fast, low overhead]
-        H4[Risk: May miss important traces]
-        H1 --> H2 --> H3 --> H4
-    end
-
-    subgraph Tail["Tail-Based Sampling"]
-        T1[Decision at trace END]
-        T2[Smart: Keep all errors<br/>sample 10% of fast traces]
-        T3[Requires collecting all spans first]
-        T4[Higher resource usage, more complex]
-        T1 --> T2 --> T3 --> T4
-    end
-
-    subgraph Storage["Storage-Based Sampling"]
-        S1[Decision in analysis tool]
-        S2[Store 100% for 1 week hot storage]
-        S3[Sample 10% for historical cold storage]
-        S4[Best of both worlds, higher initial cost]
-        S1 --> S2 --> S3 --> S4
-    end
-
-    style Head fill:#3b82f6,color:#fff
-    style Tail fill:#10b981,color:#fff
-    style Storage fill:#8b5cf6,color:#fff
-```
+<CardGrid columns={3} cards={[
+  {
+    title: "Head-Based Sampling",
+    icon: "🎲",
+    color: colors.blue,
+    description: "Decision at trace START",
+    items: [
+      "Simple: Keep 10% of traces",
+      "Fast, low overhead",
+      "Risk: May miss important traces"
+    ]
+  },
+  {
+    title: "Tail-Based Sampling",
+    icon: "🎯",
+    color: colors.green,
+    description: "Decision at trace END",
+    items: [
+      "Smart: Keep all errors, sample 10% of fast traces",
+      "Requires collecting all spans first",
+      "Higher resource usage, more complex"
+    ]
+  },
+  {
+    title: "Storage-Based Sampling",
+    icon: "💾",
+    color: colors.purple,
+    description: "Decision in analysis tool",
+    items: [
+      "Store 100% for 1 week hot storage",
+      "Sample 10% for historical cold storage",
+      "Best of both worlds, higher initial cost"
+    ]
+  }
+]} />
 
 **Tail-based sampling configuration:**
 
@@ -315,28 +349,40 @@ processors:
 
 **Backpressure** occurs when producers send faster than consumers can receive:
 
-```mermaid
-graph TD
-    subgraph Normal["Normal Flow"]
-        N1[App: 100 spans/s] --> N2[Collector: 100 spans/s] --> N3[Backend ✓]
-    end
-
-    subgraph Backpressure["Backpressure"]
-        B1[App: 1000 spans/s] --> B2[Collector: 100 spans/s]
-        B2 --> B3[Buffer fills]
-        B3 --> B4[Buffer full → DROP DATA 😱]
-    end
-
-    subgraph WithPool["With Collector Pool"]
-        P1[App: 1000 spans/s] --> P2[Load Balancer]
-        P2 --> P3[Collector Pool<br/>More buffer capacity!]
-        P3 --> P4[Backend]
-    end
-
-    style Normal fill:#10b981,color:#fff
-    style Backpressure fill:#ef4444,color:#fff
-    style WithPool fill:#3b82f6,color:#fff
-```
+<CardGrid columns={3} cards={[
+  {
+    title: "Normal Flow",
+    icon: "✅",
+    color: colors.green,
+    items: [
+      "App: 100 spans/s",
+      "Collector: 100 spans/s",
+      "Backend ✓"
+    ]
+  },
+  {
+    title: "Backpressure",
+    icon: "⚠️",
+    color: colors.red,
+    items: [
+      "App: 1000 spans/s",
+      "Collector: 100 spans/s",
+      "Buffer fills",
+      "Buffer full → DROP DATA 😱"
+    ]
+  },
+  {
+    title: "With Collector Pool",
+    icon: "🎯",
+    color: colors.blue,
+    items: [
+      "App: 1000 spans/s",
+      "Load Balancer",
+      "Collector Pool - More buffer capacity!",
+      "Backend"
+    ]
+  }
+]} />
 
 **Managing backpressure:**
 
@@ -364,30 +410,38 @@ extensions:
 
 ## 4. Collector Security
 
-```mermaid
-graph TD
-    subgraph Network["Network Security"]
-        Net1[✓ Bind to localhost for local traffic<br/>endpoint: localhost:4317 NOT 0.0.0.0:4317]
-        Net2[✓ Use TLS for remote traffic]
-        Net3[✓ Implement authentication for external receivers]
-    end
-
-    subgraph Data["Data Security"]
-        D1[✓ Scrub PII in pipeline]
-        D2[✓ Use redaction processors]
-        D3[✓ Consider data residency requirements]
-    end
-
-    subgraph Operational["Operational Security"]
-        O1[✓ Run as non-root user]
-        O2[✓ Use minimal Collector builds]
-        O3[✓ Keep Collector updated]
-    end
-
-    style Network fill:#3b82f6,color:#fff
-    style Data fill:#10b981,color:#fff
-    style Operational fill:#8b5cf6,color:#fff
-```
+<CardGrid columns={3} cards={[
+  {
+    title: "Network Security",
+    icon: "🔒",
+    color: colors.blue,
+    items: [
+      "✓ Bind to localhost for local traffic (endpoint: localhost:4317 NOT 0.0.0.0:4317)",
+      "✓ Use TLS for remote traffic",
+      "✓ Implement authentication for external receivers"
+    ]
+  },
+  {
+    title: "Data Security",
+    icon: "🛡️",
+    color: colors.green,
+    items: [
+      "✓ Scrub PII in pipeline",
+      "✓ Use redaction processors",
+      "✓ Consider data residency requirements"
+    ]
+  },
+  {
+    title: "Operational Security",
+    icon: "⚙️",
+    color: colors.purple,
+    items: [
+      "✓ Run as non-root user",
+      "✓ Use minimal Collector builds",
+      "✓ Keep Collector updated"
+    ]
+  }
+]} />
 
 ---
 
@@ -395,67 +449,77 @@ graph TD
 
 The OpenTelemetry Operator supports multiple deployment modes:
 
-```mermaid
-graph TD
-    subgraph DaemonSet["DaemonSet - One Collector per node"]
-        DS1[Node 1<br/>Collector + Pods]
-        DS2[Node 2<br/>Collector + Pods]
-        DS3[Node 3<br/>Collector + Pods]
-        DS4[Good for: Host metrics,<br/>shared by all pods on node]
-    end
-
-    subgraph Sidecar["Sidecar - One Collector per pod"]
-        SC1[Pod: App + Collector]
-        SC2[Good for: Pod isolation,<br/>fast local export]
-    end
-
-    subgraph Deployment["Deployment Pool - Scalable Collector pool"]
-        DP1[Collector 1]
-        DP2[Collector 2]
-        DP3[Collector 3]
-        DP4[Good for: Central processing,<br/>heavy transformations]
-        DP5[Load Balancer]
-        DP5 --> DP1
-        DP5 --> DP2
-        DP5 --> DP3
-    end
-
-    style DaemonSet fill:#3b82f6,color:#fff
-    style Sidecar fill:#10b981,color:#fff
-    style Deployment fill:#8b5cf6,color:#fff
-```
+<CardGrid columns={3} cards={[
+  {
+    title: "DaemonSet",
+    icon: "🖥️",
+    color: colors.blue,
+    description: "One Collector per node",
+    items: [
+      "Node 1: Collector + Pods",
+      "Node 2: Collector + Pods",
+      "Node 3: Collector + Pods",
+      "Good for: Host metrics, shared by all pods on node"
+    ]
+  },
+  {
+    title: "Sidecar",
+    icon: "📦",
+    color: colors.green,
+    description: "One Collector per pod",
+    items: [
+      "Pod: App + Collector",
+      "Good for: Pod isolation, fast local export"
+    ]
+  },
+  {
+    title: "Deployment Pool",
+    icon: "🔄",
+    color: colors.purple,
+    description: "Scalable Collector pool",
+    items: [
+      "Collector 1",
+      "Collector 2",
+      "Collector 3",
+      "Load Balancer → Collectors",
+      "Good for: Central processing, heavy transformations"
+    ]
+  }
+]} />
 
 ---
 
 ## 6. Managing Telemetry Costs
 
-```mermaid
-graph TD
-    Cost1[1. Don't collect what you don't need]
-    Cost1 --> C1A[Filter health checks, debug spans]
-    Cost1 --> C1B[Remove unused attributes]
-    Cost1 --> C1C[Set appropriate retention policies]
-
-    Cost2[2. Compress aggressively]
-    Cost2 --> C2A[Use OTel Arrow for high-volume egress]
-    Cost2 --> C2B[Enable gzip compression]
-    Cost2 --> C2C[Batch efficiently]
-
-    Cost3[3. Transform to reduce cardinality]
-    Cost3 --> C3A[Aggregate metrics where possible]
-    Cost3 --> C3B[Convert traces to metrics for counts/histograms]
-    Cost3 --> C3C[Remove high-cardinality attributes]
-
-    Cost4[4. Sample intelligently last resort]
-    Cost4 --> C4A[Keep all errors]
-    Cost4 --> C4B[Keep all slow traces]
-    Cost4 --> C4C[Sample normal traces]
-
-    style Cost1 fill:#10b981,color:#fff
-    style Cost2 fill:#3b82f6,color:#fff
-    style Cost3 fill:#8b5cf6,color:#fff
-    style Cost4 fill:#f59e0b,color:#fff
-```
+<ProcessFlow
+  direction="vertical"
+  steps={[
+    {
+      title: "1. Don't collect what you don't need",
+      icon: "🗑️",
+      color: colors.green,
+      description: "Filter health checks, debug spans • Remove unused attributes • Set appropriate retention policies"
+    },
+    {
+      title: "2. Compress aggressively",
+      icon: "📦",
+      color: colors.blue,
+      description: "Use OTel Arrow for high-volume egress • Enable gzip compression • Batch efficiently"
+    },
+    {
+      title: "3. Transform to reduce cardinality",
+      icon: "🔧",
+      color: colors.purple,
+      description: "Aggregate metrics where possible • Convert traces to metrics for counts/histograms • Remove high-cardinality attributes"
+    },
+    {
+      title: "4. Sample intelligently (last resort)",
+      icon: "⚠️",
+      color: colors.orange,
+      description: "Keep all errors • Keep all slow traces • Sample normal traces"
+    }
+  ]}
+/>
 
 > **💡 Insight**
 >

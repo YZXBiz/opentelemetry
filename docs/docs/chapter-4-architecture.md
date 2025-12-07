@@ -4,7 +4,7 @@ title: "Chapter 4: The OpenTelemetry Architecture"
 description: "Understanding the API, SDK, Collector architecture and hands-on demo exploration"
 ---
 
-import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram, ArchitectureDiagram } from '@site/src/components/diagrams';
+import { CardGrid, TreeDiagram, Row, Box, Arrow, Column, Group, DiagramContainer, ProcessFlow, StackDiagram, colors } from '@site/src/components/diagrams';
 
 # 🏗️ Chapter 4: The OpenTelemetry Architecture
 
@@ -46,24 +46,31 @@ import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram, Architec
 
 Application telemetry comes from code running in your services. Here's how the pieces fit together:
 
-```mermaid
-graph TD
-    subgraph App["Your Application"]
-        Libs["Instrumented Libraries<br/>(HTTP client, database driver, framework, etc.)<br/>Uses API calls"]
-        API["OpenTelemetry API<br/>• Tracer, Meter, Logger interfaces<br/>• Zero dependencies, minimal overhead"]
-        SDK["OpenTelemetry SDK<br/>• TracerProvider, MeterProvider, LoggerProvider<br/>• Samplers, Processors, Exporters"]
-
-        Libs -->|API calls| API
-        API -->|Backed by SDK| SDK
-    end
-
-    SDK -->|OTLP| Collector["Collector"]
-
-    style Libs fill:#3b82f6,color:#fff
-    style API fill:#8b5cf6,color:#fff
-    style SDK fill:#10b981,color:#fff
-    style Collector fill:#f59e0b,color:#fff
-```
+<DiagramContainer>
+  <Group title="Your Application" color={colors.blue}>
+    <Column gap="md">
+      <Box color={colors.blue} variant="filled">
+        Instrumented Libraries<br/>
+        (HTTP client, database driver, framework, etc.)<br/>
+        Uses API calls
+      </Box>
+      <Arrow direction="down" label="API calls" />
+      <Box color={colors.purple} variant="filled">
+        OpenTelemetry API<br/>
+        • Tracer, Meter, Logger interfaces<br/>
+        • Zero dependencies, minimal overhead
+      </Box>
+      <Arrow direction="down" label="Backed by SDK" />
+      <Box color={colors.green} variant="filled">
+        OpenTelemetry SDK<br/>
+        • TracerProvider, MeterProvider, LoggerProvider<br/>
+        • Samplers, Processors, Exporters
+      </Box>
+    </Column>
+  </Group>
+  <Arrow direction="down" label="OTLP" />
+  <Box color={colors.orange} variant="filled">Collector</Box>
+</DiagramContainer>
 
 ### 2.1. Library Instrumentation
 
@@ -71,16 +78,28 @@ graph TD
 
 **In technical terms:** Instrumentation libraries wrap or hook into existing libraries to automatically emit telemetry.
 
-```mermaid
-graph TD
-    Native["Native Instrumentation<br/>• Built into the library itself<br/>• Best performance and accuracy<br/>• Example: A database driver with built-in tracing"]
-    InstLib["Instrumentation Libraries<br/>• Wraps existing libraries<br/>• Added separately from the library<br/>• Example: opentelemetry-instrumentation-http"]
-    Auto["Auto-Instrumentation (Agents)<br/>• Automatically instruments many libraries at once<br/>• Language-specific (Java agent, Python auto-instrumentation)<br/>• Quickest to set up, less customization"]
-
-    style Native fill:#10b981,color:#fff
-    style InstLib fill:#3b82f6,color:#fff
-    style Auto fill:#8b5cf6,color:#fff
-```
+<DiagramContainer>
+  <Column gap="lg">
+    <Box color={colors.green} variant="filled" size="lg">
+      Native Instrumentation<br/>
+      • Built into the library itself<br/>
+      • Best performance and accuracy<br/>
+      • Example: A database driver with built-in tracing
+    </Box>
+    <Box color={colors.blue} variant="filled" size="lg">
+      Instrumentation Libraries<br/>
+      • Wraps existing libraries<br/>
+      • Added separately from the library<br/>
+      • Example: opentelemetry-instrumentation-http
+    </Box>
+    <Box color={colors.purple} variant="filled" size="lg">
+      Auto-Instrumentation (Agents)<br/>
+      • Automatically instruments many libraries at once<br/>
+      • Language-specific (Java agent, Python auto-instrumentation)<br/>
+      • Quickest to set up, less customization
+    </Box>
+  </Column>
+</DiagramContainer>
 
 > **💡 Insight**
 >
@@ -92,19 +111,27 @@ graph TD
 
 **In technical terms:** The API provides interfaces for creating telemetry, with no actual implementation. It's safe to depend on from libraries.
 
-```mermaid
-graph TD
-    subgraph API["API Package"]
-        Interfaces["Defines interfaces only (Tracer, Meter, Logger)<br/>• Zero or minimal dependencies<br/>• No-op by default (does nothing until SDK is registered)<br/>• Safe for library authors to depend on<br/>• Stable: backward-compatible forever"]
-        Example["Example API usage:<br/>tracer = getTracer('my-service')<br/>span = tracer.startSpan('process-order')<br/>span.setAttribute('order.id', orderId)<br/>span.end()"]
-
-        Interfaces --> Example
-    end
-
-    style API fill:#8b5cf6,color:#fff
-    style Interfaces fill:#3b82f6,color:#fff
-    style Example fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <Group title="API Package" color={colors.purple}>
+    <Column gap="md">
+      <Box color={colors.blue} variant="filled" size="lg">
+        Defines interfaces only (Tracer, Meter, Logger)<br/>
+        • Zero or minimal dependencies<br/>
+        • No-op by default (does nothing until SDK is registered)<br/>
+        • Safe for library authors to depend on<br/>
+        • Stable: backward-compatible forever
+      </Box>
+      <Arrow direction="down" />
+      <Box color={colors.green} variant="filled" size="lg">
+        Example API usage:<br/>
+        tracer = getTracer('my-service')<br/>
+        span = tracer.startSpan('process-order')<br/>
+        span.setAttribute('order.id', orderId)<br/>
+        span.end()
+      </Box>
+    </Column>
+  </Group>
+</DiagramContainer>
 
 **Why separate API from SDK?**
 
@@ -121,28 +148,42 @@ graph TD
 
 **In technical terms:** The SDK implements the API interfaces and provides the machinery for collecting and exporting telemetry.
 
-```mermaid
-graph TD
-    subgraph SDK["SDK"]
-        Providers["Providers (TracerProvider, MeterProvider, etc.)<br/>• Create and manage Tracers/Meters/Loggers<br/>• Hold configuration and state"]
-        Resource["Resource<br/>• Describes the entity producing telemetry<br/>• service.name, host.name, k8s.pod.name, etc."]
-        Samplers["Samplers<br/>• Decide which traces to record<br/>• AlwaysOn, AlwaysOff, TraceIdRatioBased, etc."]
-        Processors["Processors<br/>• Process data before export<br/>• BatchProcessor (batches for efficiency)<br/>• SimpleProcessor (immediate export)"]
-        Exporters["Exporters<br/>• Send data to backends<br/>• OTLP, Jaeger, Prometheus, Console, etc."]
-
-        Providers --> Resource
-        Resource --> Samplers
-        Samplers --> Processors
-        Processors --> Exporters
-    end
-
-    style SDK fill:#3b82f6,color:#fff
-    style Providers fill:#8b5cf6,color:#fff
-    style Resource fill:#10b981,color:#fff
-    style Samplers fill:#f59e0b,color:#fff
-    style Processors fill:#3b82f6,color:#fff
-    style Exporters fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <Group title="SDK" color={colors.blue}>
+    <Column gap="md">
+      <Box color={colors.purple} variant="filled" size="lg">
+        Providers (TracerProvider, MeterProvider, etc.)<br/>
+        • Create and manage Tracers/Meters/Loggers<br/>
+        • Hold configuration and state
+      </Box>
+      <Arrow direction="down" />
+      <Box color={colors.green} variant="filled" size="lg">
+        Resource<br/>
+        • Describes the entity producing telemetry<br/>
+        • service.name, host.name, k8s.pod.name, etc.
+      </Box>
+      <Arrow direction="down" />
+      <Box color={colors.orange} variant="filled" size="lg">
+        Samplers<br/>
+        • Decide which traces to record<br/>
+        • AlwaysOn, AlwaysOff, TraceIdRatioBased, etc.
+      </Box>
+      <Arrow direction="down" />
+      <Box color={colors.blue} variant="filled" size="lg">
+        Processors<br/>
+        • Process data before export<br/>
+        • BatchProcessor (batches for efficiency)<br/>
+        • SimpleProcessor (immediate export)
+      </Box>
+      <Arrow direction="down" />
+      <Box color={colors.green} variant="filled" size="lg">
+        Exporters<br/>
+        • Send data to backends<br/>
+        • OTLP, Jaeger, Prometheus, Console, etc.
+      </Box>
+    </Column>
+  </Group>
+</DiagramContainer>
 
 ---
 
@@ -150,18 +191,28 @@ graph TD
 
 Not all telemetry comes from application code. Infrastructure telemetry captures:
 
-```mermaid
-graph TD
-    Host["Host Metrics<br/>• CPU, memory, disk, network<br/>• Collected by Collector's hostmetrics receiver"]
-    Container["Container Metrics<br/>• Docker/containerd stats<br/>• Resource limits and usage"]
-    K8s["Kubernetes Metrics<br/>• Pod, node, cluster metrics<br/>• Events and object states"]
-    Cloud["Cloud Provider Metrics<br/>• AWS CloudWatch, Azure Monitor, GCP Cloud Monitoring<br/>• Managed service metrics"]
-
-    style Host fill:#3b82f6,color:#fff
-    style Container fill:#8b5cf6,color:#fff
-    style K8s fill:#10b981,color:#fff
-    style Cloud fill:#f59e0b,color:#fff
-```
+<CardGrid columns={2} cards={[
+  {
+    title: "Host Metrics",
+    color: colors.blue,
+    description: "• CPU, memory, disk, network\n• Collected by Collector's hostmetrics receiver"
+  },
+  {
+    title: "Container Metrics",
+    color: colors.purple,
+    description: "• Docker/containerd stats\n• Resource limits and usage"
+  },
+  {
+    title: "Kubernetes Metrics",
+    color: colors.green,
+    description: "• Pod, node, cluster metrics\n• Events and object states"
+  },
+  {
+    title: "Cloud Provider Metrics",
+    color: colors.orange,
+    description: "• AWS CloudWatch, Azure Monitor, GCP Cloud Monitoring\n• Managed service metrics"
+  }
+]} />
 
 > **💡 Insight**
 >
@@ -173,28 +224,40 @@ graph TD
 
 A telemetry pipeline connects sources to destinations:
 
-```mermaid
-graph LR
-    App1["App 1"]
-    App2["App 2"]
-    Infra["Infra"]
-    Collection["Collection<br/>• Receive data<br/>• Parse formats<br/>• Validate"]
-    Processing["Processing<br/>• Transform<br/>• Filter<br/>• Sample<br/>• Enrich"]
-    Backend["Backend<br/>or<br/>Storage"]
-
-    App1 --> Collection
-    App2 --> Collection
-    Infra --> Collection
-    Collection --> Processing
-    Processing --> Backend
-
-    style App1 fill:#3b82f6,color:#fff
-    style App2 fill:#3b82f6,color:#fff
-    style Infra fill:#8b5cf6,color:#fff
-    style Collection fill:#10b981,color:#fff
-    style Processing fill:#f59e0b,color:#fff
-    style Backend fill:#3b82f6,color:#fff
-```
+<DiagramContainer>
+  <Column gap="md">
+    <Row gap="lg">
+      <Box color={colors.blue} variant="filled">App 1</Box>
+      <Box color={colors.blue} variant="filled">App 2</Box>
+      <Box color={colors.purple} variant="filled">Infra</Box>
+    </Row>
+    <Row gap="md" align="center">
+      <Arrow direction="down" />
+      <Arrow direction="down" />
+      <Arrow direction="down" />
+    </Row>
+    <Box color={colors.green} variant="filled" size="lg">
+      Collection<br/>
+      • Receive data<br/>
+      • Parse formats<br/>
+      • Validate
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.orange} variant="filled" size="lg">
+      Processing<br/>
+      • Transform<br/>
+      • Filter<br/>
+      • Sample<br/>
+      • Enrich
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.blue} variant="filled" size="lg">
+      Backend<br/>
+      or<br/>
+      Storage
+    </Box>
+  </Column>
+</DiagramContainer>
 
 ---
 
@@ -204,30 +267,38 @@ graph LR
 
 **In technical terms:** The OpenTelemetry Collector is a vendor-agnostic proxy that receives, processes, and exports telemetry data.
 
-```mermaid
-graph LR
-    Incoming["Incoming<br/>Data"]
-
-    subgraph Collector["Collector"]
-        Receivers["Receivers<br/>OTLP, Jaeger,<br/>Prometheus,<br/>Zipkin, etc."]
-        Processors["Processors<br/>Batch, Filter,<br/>Transform,<br/>Sample, etc."]
-        Exporters["Exporters<br/>OTLP, Jaeger,<br/>Prometheus,<br/>Logging, etc."]
-
-        Receivers --> Processors
-        Processors --> Exporters
-    end
-
-    Outgoing["Outgoing<br/>Data"]
-
-    Incoming --> Receivers
-    Exporters --> Outgoing
-
-    style Incoming fill:#3b82f6,color:#fff
-    style Receivers fill:#10b981,color:#fff
-    style Processors fill:#f59e0b,color:#fff
-    style Exporters fill:#8b5cf6,color:#fff
-    style Outgoing fill:#3b82f6,color:#fff
-```
+<DiagramContainer>
+  <Row gap="lg" align="center">
+    <Box color={colors.blue} variant="filled">Incoming<br/>Data</Box>
+    <Arrow direction="right" />
+    <Group title="Collector" color={colors.slate}>
+      <Row gap="md">
+        <Box color={colors.green} variant="filled">
+          Receivers<br/>
+          OTLP, Jaeger,<br/>
+          Prometheus,<br/>
+          Zipkin, etc.
+        </Box>
+        <Arrow direction="right" />
+        <Box color={colors.orange} variant="filled">
+          Processors<br/>
+          Batch, Filter,<br/>
+          Transform,<br/>
+          Sample, etc.
+        </Box>
+        <Arrow direction="right" />
+        <Box color={colors.purple} variant="filled">
+          Exporters<br/>
+          OTLP, Jaeger,<br/>
+          Prometheus,<br/>
+          Logging, etc.
+        </Box>
+      </Row>
+    </Group>
+    <Arrow direction="right" />
+    <Box color={colors.blue} variant="filled">Outgoing<br/>Data</Box>
+  </Row>
+</DiagramContainer>
 
 ### 5.1. Receivers
 
@@ -304,44 +375,47 @@ service:
 
 Here's how all components interact in a typical deployment:
 
-```mermaid
-graph TD
-    subgraph Pod1["Pod 1"]
-        subgraph Service["Your Service"]
-            Code["Your Code<br/>+ Manual Spans"]
-            AutoInst["Auto-Instrument<br/>(HTTP, DB...)"]
-            Code --> SDK1
-            AutoInst --> SDK1
-            SDK1["OTel SDK<br/>(in-process)"]
-        end
-
-        Sidecar["Collector Sidecar<br/>• Receives from service<br/>• Adds k8s attributes<br/>• Batches and forwards"]
-
-        SDK1 -->|OTLP localhost| Sidecar
-    end
-
-    Gateway["Collector Gateway<br/>(shared pool)<br/>• Sampling<br/>• Filtering<br/>• Routing"]
-
-    Jaeger["Jaeger<br/>(Traces)"]
-    Prometheus["Prometheus<br/>(Metrics)"]
-    Logging["Logging<br/>Backend"]
-
-    Sidecar -->|OTLP| Gateway
-    Gateway --> Jaeger
-    Gateway --> Prometheus
-    Gateway --> Logging
-
-    style Pod1 fill:#3b82f6,color:#fff
-    style Service fill:#8b5cf6,color:#fff
-    style Code fill:#10b981,color:#fff
-    style AutoInst fill:#10b981,color:#fff
-    style SDK1 fill:#f59e0b,color:#fff
-    style Sidecar fill:#3b82f6,color:#fff
-    style Gateway fill:#8b5cf6,color:#fff
-    style Jaeger fill:#10b981,color:#fff
-    style Prometheus fill:#10b981,color:#fff
-    style Logging fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <Column gap="lg">
+    <Group title="Pod 1" color={colors.blue}>
+      <Column gap="md">
+        <Group title="Your Service" color={colors.purple}>
+          <Column gap="sm">
+            <Box color={colors.green} variant="filled">Your Code<br/>+ Manual Spans</Box>
+            <Box color={colors.green} variant="filled">Auto-Instrument<br/>(HTTP, DB...)</Box>
+            <Arrow direction="down" />
+            <Box color={colors.orange} variant="filled">OTel SDK<br/>(in-process)</Box>
+          </Column>
+        </Group>
+        <Arrow direction="down" label="OTLP localhost" />
+        <Box color={colors.blue} variant="filled">
+          Collector Sidecar<br/>
+          • Receives from service<br/>
+          • Adds k8s attributes<br/>
+          • Batches and forwards
+        </Box>
+      </Column>
+    </Group>
+    <Arrow direction="down" label="OTLP" />
+    <Box color={colors.purple} variant="filled" size="lg">
+      Collector Gateway<br/>
+      (shared pool)<br/>
+      • Sampling<br/>
+      • Filtering<br/>
+      • Routing
+    </Box>
+    <Row gap="lg">
+      <Arrow direction="down" />
+      <Arrow direction="down" />
+      <Arrow direction="down" />
+    </Row>
+    <Row gap="lg">
+      <Box color={colors.green} variant="filled">Jaeger<br/>(Traces)</Box>
+      <Box color={colors.green} variant="filled">Prometheus<br/>(Metrics)</Box>
+      <Box color={colors.green} variant="filled">Logging<br/>Backend</Box>
+    </Row>
+  </Column>
+</DiagramContainer>
 
 ---
 

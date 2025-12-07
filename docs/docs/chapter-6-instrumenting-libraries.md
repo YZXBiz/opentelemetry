@@ -4,7 +4,7 @@ title: "Chapter 6: Instrumenting Libraries"
 description: "Why and how to add native OpenTelemetry instrumentation to shared libraries"
 ---
 
-import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@site/src/components/diagrams';
+import { CardGrid, TreeDiagram, Row, Box, Arrow, Column, Group, DiagramContainer, ProcessFlow, StackDiagram, colors } from '@site/src/components/diagrams';
 
 # 📚 Chapter 6: Instrumenting Libraries
 
@@ -44,16 +44,31 @@ import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@
 
 Most of the work in your application happens inside libraries:
 
-```mermaid
-graph TD
-    App["Your Application Code<br/>─────────────────────<br/>Get user data, validate it, save to database<br/><br/>• Decides WHAT to do<br/>• Uses ~5% of CPU/memory"]
-    Lib["Library Code<br/>─────────────────────<br/>HTTP client, database driver, serialization, caching<br/><br/>• Does the ACTUAL work<br/>• Uses ~95% of CPU/memory<br/>• Where most problems actually occur"]
-
-    App -->|calls| Lib
-
-    style App fill:#3b82f6,color:#fff
-    style Lib fill:#8b5cf6,color:#fff
-```
+<DiagramContainer title="Application vs Library Workload">
+  <Column gap="lg" align="center">
+    <Box color={colors.blue} size="lg">
+      Your Application Code
+      <br/><br/>
+      Get user data, validate it, save to database
+      <br/><br/>
+      • Decides WHAT to do
+      <br/>
+      • Uses ~5% of CPU/memory
+    </Box>
+    <Arrow direction="down" label="calls" />
+    <Box color={colors.purple} size="lg">
+      Library Code
+      <br/><br/>
+      HTTP client, database driver, serialization, caching
+      <br/><br/>
+      • Does the ACTUAL work
+      <br/>
+      • Uses ~95% of CPU/memory
+      <br/>
+      • Where most problems actually occur
+    </Box>
+  </Column>
+</DiagramContainer>
 
 **Common production problems that originate in library usage:**
 
@@ -77,44 +92,98 @@ graph TD
 
 **In plain English:** When a user installs your library, observability should just work—no extra plugins or configuration needed.
 
-```mermaid
-graph LR
-    subgraph Without["Without Native Instrumentation"]
-        W1["Install:<br/>your-database-driver"]
-        W2["Install:<br/>opentelemetry-instrumentation-your-driver<br/>(separate package!)"]
-        W3["Hope they're<br/>compatible versions!"]
-        W4["Then user must:<br/>• Find instrumentation package<br/>• Install it<br/>• Configure it<br/>• Hope it stays maintained<br/>• Update both in sync"]
-        W1 --> W2 --> W3 --> W4
-    end
-
-    subgraph With["With Native Instrumentation"]
-        N1["Install:<br/>your-database-driver<br/>(instrumentation included!)"]
-        N2["Nothing!<br/>It just works when<br/>OTel SDK is present"]
-        N1 --> N2
-    end
-
-    style W1 fill:#ef4444,color:#fff
-    style W2 fill:#ef4444,color:#fff
-    style W3 fill:#ef4444,color:#fff
-    style W4 fill:#ef4444,color:#fff
-    style N1 fill:#10b981,color:#fff
-    style N2 fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <Row gap="lg" wrap align="stretch">
+    <Group title="Without Native Instrumentation" color={colors.red} direction="column">
+      <Column gap="md">
+        <Box color={colors.red} size="md">
+          Install:
+          <br/>
+          your-database-driver
+        </Box>
+        <Arrow direction="down" />
+        <Box color={colors.red} size="md">
+          Install:
+          <br/>
+          opentelemetry-instrumentation-your-driver
+          <br/>
+          (separate package!)
+        </Box>
+        <Arrow direction="down" />
+        <Box color={colors.red} size="md">
+          Hope they're
+          <br/>
+          compatible versions!
+        </Box>
+        <Arrow direction="down" />
+        <Box color={colors.red} size="md">
+          Then user must:
+          <br/>
+          • Find instrumentation package
+          <br/>
+          • Install it
+          <br/>
+          • Configure it
+          <br/>
+          • Hope it stays maintained
+          <br/>
+          • Update both in sync
+        </Box>
+      </Column>
+    </Group>
+    <Group title="With Native Instrumentation" color={colors.green} direction="column">
+      <Column gap="md">
+        <Box color={colors.green} size="md">
+          Install:
+          <br/>
+          your-database-driver
+          <br/>
+          (instrumentation included!)
+        </Box>
+        <Arrow direction="down" />
+        <Box color={colors.green} size="md">
+          Nothing!
+          <br/>
+          It just works when
+          <br/>
+          OTel SDK is present
+        </Box>
+      </Column>
+    </Group>
+  </Row>
+</DiagramContainer>
 
 ### 3.2. Communicating with Users
 
 **Your telemetry is a communication channel with your users.**
 
-```mermaid
-graph TD
-    T1["Warnings & Configuration Issues<br/>─────────────────────<br/>Connection pool exhausted - consider increasing pool size<br/>Query took 5s - missing index on column X?<br/>Buffer overflow - reduce batch size"]
-    T2["Performance Patterns<br/>─────────────────────<br/>Spans show: 10 sequential queries to same table<br/>Message: Consider using batch query instead"]
-    T3["Usage Antipatterns<br/>─────────────────────<br/>Traces reveal: New connection created for each request<br/>Message: Reuse connections via pooling"]
-
-    style T1 fill:#f59e0b,color:#fff
-    style T2 fill:#3b82f6,color:#fff
-    style T3 fill:#ef4444,color:#fff
-```
+<DiagramContainer title="Telemetry as Communication">
+  <Column gap="md">
+    <Box color={colors.orange} size="lg">
+      Warnings & Configuration Issues
+      <br/><br/>
+      Connection pool exhausted - consider increasing pool size
+      <br/>
+      Query took 5s - missing index on column X?
+      <br/>
+      Buffer overflow - reduce batch size
+    </Box>
+    <Box color={colors.blue} size="lg">
+      Performance Patterns
+      <br/><br/>
+      Spans show: 10 sequential queries to same table
+      <br/>
+      Message: Consider using batch query instead
+    </Box>
+    <Box color={colors.red} size="lg">
+      Usage Antipatterns
+      <br/><br/>
+      Traces reveal: New connection created for each request
+      <br/>
+      Message: Reuse connections via pooling
+    </Box>
+  </Column>
+</DiagramContainer>
 
 **Documentation powered by telemetry:**
 
@@ -131,17 +200,53 @@ graph TD
 
 **In technical terms:** Native instrumentation can be optimized alongside the library code, avoiding the overhead of generic wrappers.
 
-```mermaid
-graph LR
-    subgraph Problem["Third-Party Instrumentation Problems"]
-        P1["Your Library<br/>─────────────<br/>function query(sql) {<br/>  // Your optimized code<br/>  return result<br/>}"]
-        P2["Wrapper Instrumentation<br/>─────────────<br/>function wrapQuery(sql) {<br/>  startSpan()<br/>  try {<br/>    result = query(sql)<br/>    addAttributes(...) ← Slow!<br/>  } finally {<br/>    endSpan()<br/>  }<br/>}<br/><br/>Problems:<br/>• Extra function call overhead<br/>• Can't access internal state efficiently<br/>• May copy data unnecessarily<br/>• Often misses important details"]
-        P1 --> P2
-    end
-
-    style P1 fill:#3b82f6,color:#fff
-    style P2 fill:#ef4444,color:#fff
-```
+<DiagramContainer title="Third-Party Instrumentation Problems">
+  <Row gap="lg" align="center">
+    <Box color={colors.blue} size="lg">
+      Your Library
+      <br/><br/>
+      function query(sql) {"{"}
+      <br/>
+      {"  "}// Your optimized code
+      <br/>
+      {"  "}return result
+      <br/>
+      {"}"}
+    </Box>
+    <Arrow direction="right" />
+    <Box color={colors.red} size="lg">
+      Wrapper Instrumentation
+      <br/><br/>
+      function wrapQuery(sql) {"{"}
+      <br/>
+      {"  "}startSpan()
+      <br/>
+      {"  "}try {"{"}
+      <br/>
+      {"    "}result = query(sql)
+      <br/>
+      {"    "}addAttributes(...) ← Slow!
+      <br/>
+      {"  }{"} finally {"{"}
+      <br/>
+      {"    "}endSpan()
+      <br/>
+      {"  }{"}
+      <br/>
+      {"}"}
+      <br/><br/>
+      Problems:
+      <br/>
+      • Extra function call overhead
+      <br/>
+      • Can't access internal state efficiently
+      <br/>
+      • May copy data unnecessarily
+      <br/>
+      • Often misses important details
+    </Box>
+  </Row>
+</DiagramContainer>
 
 ```javascript
 // Native Instrumentation
@@ -168,46 +273,39 @@ function query(sql) {
 
 Historically, library authors faced impossible choices:
 
-```mermaid
-graph TD
-    Choice["Your Library Must Pick ONE:"]
-    A["Vendor A's SDK?"]
-    B["Vendor B's SDK?"]
-    C["Vendor C's SDK?"]
-
-    A1["Works for A users"]
-    B1["Works for B users"]
-    C1["Works for C users"]
-
-    A2["Alienates B & C users"]
-    B2["Alienates A & C users"]
-    C2["Alienates A & B users"]
-
-    Choice --> A
-    Choice --> B
-    Choice --> C
-
-    A --> A1 --> A2
-    B --> B1 --> B2
-    C --> C1 --> C2
-
-    Problem["There was NO RIGHT ANSWER!"]
-    A2 --> Problem
-    B2 --> Problem
-    C2 --> Problem
-
-    style Choice fill:#8b5cf6,color:#fff
-    style A fill:#3b82f6,color:#fff
-    style B fill:#3b82f6,color:#fff
-    style C fill:#3b82f6,color:#fff
-    style A1 fill:#10b981,color:#fff
-    style B1 fill:#10b981,color:#fff
-    style C1 fill:#10b981,color:#fff
-    style A2 fill:#ef4444,color:#fff
-    style B2 fill:#ef4444,color:#fff
-    style C2 fill:#ef4444,color:#fff
-    style Problem fill:#ef4444,color:#fff
-```
+<DiagramContainer title="The Impossible Choice Problem">
+  <Column gap="md" align="center">
+    <Box color={colors.purple} size="lg">
+      Your Library Must Pick ONE:
+    </Box>
+    <Row gap="lg">
+      <Column gap="sm" align="center">
+        <Box color={colors.blue} size="md">Vendor A's SDK?</Box>
+        <Arrow direction="down" />
+        <Box color={colors.green} size="md">Works for A users</Box>
+        <Arrow direction="down" />
+        <Box color={colors.red} size="md">Alienates B & C users</Box>
+      </Column>
+      <Column gap="sm" align="center">
+        <Box color={colors.blue} size="md">Vendor B's SDK?</Box>
+        <Arrow direction="down" />
+        <Box color={colors.green} size="md">Works for B users</Box>
+        <Arrow direction="down" />
+        <Box color={colors.red} size="md">Alienates A & C users</Box>
+      </Column>
+      <Column gap="sm" align="center">
+        <Box color={colors.blue} size="md">Vendor C's SDK?</Box>
+        <Arrow direction="down" />
+        <Box color={colors.green} size="md">Works for C users</Box>
+        <Arrow direction="down" />
+        <Box color={colors.red} size="md">Alienates A & B users</Box>
+      </Column>
+    </Row>
+    <Box color={colors.red} size="lg">
+      There was NO RIGHT ANSWER!
+    </Box>
+  </Column>
+</DiagramContainer>
 
 **The tracing problem was especially bad:**
 
@@ -227,38 +325,39 @@ graph TD
 
 OpenTelemetry is designed specifically for library instrumentation:
 
-```mermaid
-graph TD
-    Lib["Your Library"]
-    API["OpenTelemetry API<br/>─────────────<br/>• Zero overhead<br/>• No-op by default<br/>• Stable forever"]
-
-    App1["User's App #1<br/>Uses Datadog"]
-    App2["User's App #2<br/>Uses Jaeger"]
-    App3["User's App #3<br/>Uses no OTel"]
-
-    SDK1["OTel SDK +<br/>Datadog export"]
-    SDK2["OTel SDK +<br/>Jaeger export"]
-    NoSDK["No SDK<br/>(instrumentation is no-op)"]
-
-    Lib -->|depends on<br/>(API only)| API
-
-    API --> App1
-    API --> App2
-    API --> App3
-
-    App1 --> SDK1
-    App2 --> SDK2
-    App3 --> NoSDK
-
-    style Lib fill:#8b5cf6,color:#fff
-    style API fill:#3b82f6,color:#fff
-    style App1 fill:#10b981,color:#fff
-    style App2 fill:#10b981,color:#fff
-    style App3 fill:#10b981,color:#fff
-    style SDK1 fill:#f59e0b,color:#fff
-    style SDK2 fill:#f59e0b,color:#fff
-    style NoSDK fill:#6b7280,color:#fff
-```
+<DiagramContainer title="Universal API for All Users">
+  <Column gap="md" align="center">
+    <Box color={colors.purple} size="lg">Your Library</Box>
+    <Arrow direction="down" label="depends on (API only)" />
+    <Box color={colors.blue} size="lg">
+      OpenTelemetry API
+      <br/><br/>
+      • Zero overhead
+      <br/>
+      • No-op by default
+      <br/>
+      • Stable forever
+    </Box>
+    <Arrow direction="down" />
+    <Row gap="lg">
+      <Column gap="sm" align="center">
+        <Box color={colors.green} size="md">User's App #1<br/>Uses Datadog</Box>
+        <Arrow direction="down" />
+        <Box color={colors.orange} size="md">OTel SDK +<br/>Datadog export</Box>
+      </Column>
+      <Column gap="sm" align="center">
+        <Box color={colors.green} size="md">User's App #2<br/>Uses Jaeger</Box>
+        <Arrow direction="down" />
+        <Box color={colors.orange} size="md">OTel SDK +<br/>Jaeger export</Box>
+      </Column>
+      <Column gap="sm" align="center">
+        <Box color={colors.green} size="md">User's App #3<br/>Uses no OTel</Box>
+        <Arrow direction="down" />
+        <Box color={colors.slate} size="md">No SDK<br/>(instrumentation is no-op)</Box>
+      </Column>
+    </Row>
+  </Column>
+</DiagramContainer>
 
 **Key design decisions:**
 

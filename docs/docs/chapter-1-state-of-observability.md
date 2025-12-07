@@ -4,7 +4,7 @@ title: "Chapter 1: The State of Modern Observability"
 description: "Understanding distributed systems, telemetry fundamentals, and the evolution from three pillars to a single braid of observability data"
 ---
 
-import { FlowDiagram, ComparisonDiagram, LayerDiagram } from '@site/src/components/diagrams';
+import { CardGrid, TreeDiagram, Row, Box, Arrow, Column, Group, DiagramContainer, colors } from '@site/src/components/diagrams';
 
 # 🎯 Chapter 1: The State of Modern Observability
 
@@ -47,22 +47,27 @@ Before we dive into OpenTelemetry specifically, let's establish a shared vocabul
 
 Modern applications aren't monoliths running on a single server. They're **distributed systems**—collections of independent services communicating over networks.
 
-```mermaid
-graph LR
-    subgraph "Traditional Monolith"
-        A[Single Application]
-    end
-
-    subgraph "Distributed System"
-        B[Service A] --> C[Service B]
-        C --> D[Service C]
-        B --> E[(Database)]
-        C --> E
-        D --> E
-    end
-
-    A -.->|evolves to| B
-```
+<DiagramContainer title="Evolution from Monolith to Distributed">
+  <Row gap="lg">
+    <Group title="Traditional Monolith" color={colors.slate}>
+      <Box color={colors.slate} size="lg">Single Application</Box>
+    </Group>
+    <Arrow direction="right" label="evolves to" />
+    <Group title="Distributed System" color={colors.blue}>
+      <Column gap="sm">
+        <Row gap="sm">
+          <Box color={colors.blue}>Service A</Box>
+          <Arrow direction="right" />
+          <Box color={colors.purple}>Service B</Box>
+          <Arrow direction="right" />
+          <Box color={colors.green}>Service C</Box>
+        </Row>
+        <Arrow direction="down" />
+        <Box color={colors.orange} variant="outlined">Database</Box>
+      </Column>
+    </Group>
+  </Row>
+</DiagramContainer>
 
 > **💡 Insight**
 >
@@ -81,17 +86,22 @@ Understanding observability requires distinguishing between two fundamental conc
 
 **Transaction observability** answers: "Is my application working correctly for users?"
 
-<ComparisonDiagram
-  left={{
-    title: "Resource View",
-    items: ["CPU: 45%", "Memory: 2.1GB", "Disk I/O: 12MB/s", "Network: 100Mbps"],
-    color: "#3b82f6"
-  }}
-  right={{
-    title: "Transaction View",
-    items: ["Request: GET /api/users", "Duration: 234ms", "Status: 200 OK", "User: customer_123"],
-    color: "#10b981"
-  }}
+<CardGrid
+  columns={2}
+  cards={[
+    {
+      title: "Resource View",
+      icon: "🖥️",
+      color: colors.blue,
+      items: ["CPU: 45%", "Memory: 2.1GB", "Disk I/O: 12MB/s", "Network: 100Mbps"]
+    },
+    {
+      title: "Transaction View",
+      icon: "📊",
+      color: colors.green,
+      items: ["Request: GET /api/users", "Duration: 234ms", "Status: 200 OK", "User: customer_123"]
+    }
+  ]}
 />
 
 > **💡 Insight**
@@ -116,21 +126,19 @@ There are three primary types of telemetry data:
 | **Metrics** | Numerical measurements over time | Alerting, dashboards, trends |
 | **Traces** | Request flow across services | Understanding distributed transactions |
 
-```mermaid
-graph TD
-    T[Telemetry Types] --> L[Logs]
-    T --> M[Metrics]
-    T --> R[Traces]
-
-    L --> L1["What happened"]
-    M --> M1["How much/many"]
-    R --> R1["How it flowed"]
-
-    style T fill:#3b82f6,color:#fff
-    style L fill:#8b5cf6,color:#fff
-    style M fill:#10b981,color:#fff
-    style R fill:#f59e0b,color:#fff
-```
+<DiagramContainer title="Telemetry Types">
+  <TreeDiagram
+    root={{
+      label: "Telemetry",
+      color: colors.blue,
+      children: [
+        { label: "Logs", color: colors.purple, children: [{ label: "What happened", color: colors.slate }] },
+        { label: "Metrics", color: colors.green, children: [{ label: "How much/many", color: colors.slate }] },
+        { label: "Traces", color: colors.orange, children: [{ label: "How it flowed", color: colors.slate }] }
+      ]
+    }}
+  />
+</DiagramContainer>
 
 ### 3.2. Telemetry Attributes
 
@@ -161,22 +169,31 @@ Raw telemetry data isn't very useful without **context**. Attributes add meaning
 
 For years, the industry talked about the "three pillars of observability"—logs, metrics, and traces. But this framing created problems:
 
-```mermaid
-graph TD
-    subgraph "The Three Pillars Model"
-        L[Logs] --> LA[Tool A]
-        M[Metrics] --> MB[Tool B]
-        T[Traces] --> TC[Tool C]
-
-        LA --> SA[(Storage A)]
-        MB --> SB[(Storage B)]
-        TC --> SC[(Storage C)]
-    end
-
-    style L fill:#8b5cf6,color:#fff
-    style M fill:#10b981,color:#fff
-    style T fill:#f59e0b,color:#fff
-```
+<DiagramContainer title="The Three Pillars Model (Problematic)">
+  <Row gap="lg">
+    <Column gap="sm">
+      <Box color={colors.purple}>Logs</Box>
+      <Arrow direction="down" />
+      <Box color={colors.purple} variant="subtle">Tool A</Box>
+      <Arrow direction="down" />
+      <Box color={colors.purple} variant="outlined">Storage A</Box>
+    </Column>
+    <Column gap="sm">
+      <Box color={colors.green}>Metrics</Box>
+      <Arrow direction="down" />
+      <Box color={colors.green} variant="subtle">Tool B</Box>
+      <Arrow direction="down" />
+      <Box color={colors.green} variant="outlined">Storage B</Box>
+    </Column>
+    <Column gap="sm">
+      <Box color={colors.orange}>Traces</Box>
+      <Arrow direction="down" />
+      <Box color={colors.orange} variant="subtle">Tool C</Box>
+      <Arrow direction="down" />
+      <Box color={colors.orange} variant="outlined">Storage C</Box>
+    </Column>
+  </Row>
+</DiagramContainer>
 
 **The problems with this model:**
 
@@ -195,16 +212,19 @@ graph TD
 
 OpenTelemetry introduces a better mental model: instead of three separate pillars, think of telemetry as a **single braid** of interconnected data.
 
-```mermaid
-graph LR
-    L[Logs] --> U[Unified Telemetry]
-    M[Metrics] --> U
-    T[Traces] --> U
-    U --> C[Correlated Analysis]
-
-    style U fill:#3b82f6,color:#fff
-    style C fill:#10b981,color:#fff
-```
+<DiagramContainer title="The Braid Model (Better)">
+  <Row gap="md">
+    <Column gap="sm">
+      <Box color={colors.purple}>Logs</Box>
+      <Box color={colors.green}>Metrics</Box>
+      <Box color={colors.orange}>Traces</Box>
+    </Column>
+    <Arrow direction="right" />
+    <Box color={colors.blue} size="lg">Unified Telemetry</Box>
+    <Arrow direction="right" />
+    <Box color={colors.green} size="lg">Correlated Analysis</Box>
+  </Row>
+</DiagramContainer>
 
 **What makes this work:**
 
@@ -215,28 +235,32 @@ graph LR
 | **Semantic conventions** | Standard names for common concepts |
 | **Correlation** | Jump from a metric to related traces to specific logs |
 
-<ComparisonDiagram
-  left={{
-    title: "Before: Investigating",
-    items: [
-      "1. See metric spike in Tool A",
-      "2. Search logs in Tool B",
-      "3. Guess traces in Tool C",
-      "4. Repeat until found"
-    ],
-    color: "#ef4444"
-  }}
-  right={{
-    title: "After: Correlated",
-    items: [
-      "1. See metric spike",
-      "2. Click to see traces",
-      "3. Click to see logs",
-      "4. Understand problem"
-    ],
-    color: "#10b981"
-  }}
-  centerLabel="vs"
+<CardGrid
+  columns={2}
+  cards={[
+    {
+      title: "Before: Investigating",
+      icon: "❌",
+      color: colors.red,
+      items: [
+        "1. See metric spike in Tool A",
+        "2. Search logs in Tool B",
+        "3. Guess traces in Tool C",
+        "4. Repeat until found"
+      ]
+    },
+    {
+      title: "After: Correlated",
+      icon: "✅",
+      color: colors.green,
+      items: [
+        "1. See metric spike",
+        "2. Click to see traces",
+        "3. Click to see logs",
+        "4. Understand problem"
+      ]
+    }
+  ]}
 />
 
 > **💡 Insight**

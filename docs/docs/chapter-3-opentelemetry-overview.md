@@ -4,7 +4,7 @@ title: "Chapter 3: OpenTelemetry Overview"
 description: "Understanding the three primary signals (traces, metrics, logs), context propagation, and semantic conventions"
 ---
 
-import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@site/src/components/diagrams';
+import { CardGrid, TreeDiagram, Row, Box, Arrow, Column, Group, DiagramContainer, ProcessFlow, StackDiagram, colors } from '@site/src/components/diagrams';
 
 # 🔍 Chapter 3: OpenTelemetry Overview
 
@@ -45,16 +45,37 @@ import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@
 
 OpenTelemetry supports three primary signals, each optimized for different use cases:
 
-```mermaid
-graph LR
-    Metrics["📊 Metrics<br/>How much?<br/>Aggregated measurements<br/>over time"]
-    Traces["📍 Traces<br/>Where?<br/>Request flow<br/>across services"]
-    Logs["📝 Logs<br/>What happened?<br/>Discrete events<br/>with detailed information"]
-
-    style Metrics fill:#3b82f6,color:#fff
-    style Traces fill:#8b5cf6,color:#fff
-    style Logs fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <Row gap="md" align="stretch">
+    <Box color={colors.blue} variant="filled" size="lg">
+      <div style={{textAlign: 'center'}}>
+        <div style={{fontSize: '2em', marginBottom: '0.5em'}}>📊</div>
+        <div style={{fontWeight: 'bold', marginBottom: '0.5em'}}>Metrics</div>
+        <div style={{fontSize: '0.9em'}}>How much?</div>
+        <div style={{fontSize: '0.85em', marginTop: '0.3em'}}>Aggregated measurements</div>
+        <div style={{fontSize: '0.85em'}}>over time</div>
+      </div>
+    </Box>
+    <Box color={colors.purple} variant="filled" size="lg">
+      <div style={{textAlign: 'center'}}>
+        <div style={{fontSize: '2em', marginBottom: '0.5em'}}>📍</div>
+        <div style={{fontWeight: 'bold', marginBottom: '0.5em'}}>Traces</div>
+        <div style={{fontSize: '0.9em'}}>Where?</div>
+        <div style={{fontSize: '0.85em', marginTop: '0.3em'}}>Request flow</div>
+        <div style={{fontSize: '0.85em'}}>across services</div>
+      </div>
+    </Box>
+    <Box color={colors.green} variant="filled" size="lg">
+      <div style={{textAlign: 'center'}}>
+        <div style={{fontSize: '2em', marginBottom: '0.5em'}}>📝</div>
+        <div style={{fontWeight: 'bold', marginBottom: '0.5em'}}>Logs</div>
+        <div style={{fontSize: '0.9em'}}>What happened?</div>
+        <div style={{fontSize: '0.85em', marginTop: '0.3em'}}>Discrete events</div>
+        <div style={{fontSize: '0.85em'}}>with detailed information</div>
+      </div>
+    </Box>
+  </Row>
+</DiagramContainer>
 
 ### 2.1. Traces
 
@@ -62,25 +83,63 @@ graph LR
 
 **In technical terms:** A trace represents a single request's journey through a distributed system, consisting of spans that capture individual operations.
 
-```mermaid
-graph TD
-    Root["Span: HTTP GET /checkout<br/>Duration: 450ms<br/>Service: api-gateway<br/>Trace ID: abc123"]
-    Auth["Span: AuthService.validate<br/>Duration: 50ms<br/>Service: auth-service"]
-    Cart["Span: CartService.getItems<br/>Duration: 120ms<br/>Service: cart-service"]
-    DB["Span: PostgreSQL SELECT<br/>Duration: 45ms"]
-    Payment["Span: PaymentService.charge<br/>Duration: 200ms"]
-
-    Root --> Auth
-    Root --> Cart
-    Cart --> DB
-    Root --> Payment
-
-    style Root fill:#3b82f6,color:#fff
-    style Auth fill:#8b5cf6,color:#fff
-    style Cart fill:#8b5cf6,color:#fff
-    style DB fill:#10b981,color:#fff
-    style Payment fill:#8b5cf6,color:#fff
-```
+<DiagramContainer>
+  <TreeDiagram
+    root={{
+      label: (
+        <div style={{textAlign: 'center'}}>
+          <div style={{fontWeight: 'bold'}}>HTTP GET /checkout</div>
+          <div style={{fontSize: '0.85em'}}>Duration: 450ms</div>
+          <div style={{fontSize: '0.85em'}}>Service: api-gateway</div>
+          <div style={{fontSize: '0.85em'}}>Trace ID: abc123</div>
+        </div>
+      ),
+      color: colors.blue,
+      children: [
+        {
+          label: (
+            <div style={{textAlign: 'center'}}>
+              <div style={{fontWeight: 'bold'}}>AuthService.validate</div>
+              <div style={{fontSize: '0.85em'}}>Duration: 50ms</div>
+              <div style={{fontSize: '0.85em'}}>Service: auth-service</div>
+            </div>
+          ),
+          color: colors.purple
+        },
+        {
+          label: (
+            <div style={{textAlign: 'center'}}>
+              <div style={{fontWeight: 'bold'}}>CartService.getItems</div>
+              <div style={{fontSize: '0.85em'}}>Duration: 120ms</div>
+              <div style={{fontSize: '0.85em'}}>Service: cart-service</div>
+            </div>
+          ),
+          color: colors.purple,
+          children: [
+            {
+              label: (
+                <div style={{textAlign: 'center'}}>
+                  <div style={{fontWeight: 'bold'}}>PostgreSQL SELECT</div>
+                  <div style={{fontSize: '0.85em'}}>Duration: 45ms</div>
+                </div>
+              ),
+              color: colors.green
+            }
+          ]
+        },
+        {
+          label: (
+            <div style={{textAlign: 'center'}}>
+              <div style={{fontWeight: 'bold'}}>PaymentService.charge</div>
+              <div style={{fontSize: '0.85em'}}>Duration: 200ms</div>
+            </div>
+          ),
+          color: colors.purple
+        }
+      ]
+    }}
+  />
+</DiagramContainer>
 
 **Key trace concepts:**
 
@@ -103,16 +162,34 @@ graph TD
 
 **In technical terms:** Metrics are numerical measurements collected at regular intervals, optimized for aggregation and alerting.
 
-```mermaid
-graph TD
-    Counter["Counter<br/>• Always increases or resets<br/>• Example: http_requests_total = 15,234<br/>• Use for: Counting events, calculating rates"]
-    Gauge["Gauge<br/>• Can go up or down<br/>• Example: current_temperature = 72.5<br/>• Use for: Current values that fluctuate"]
-    Histogram["Histogram<br/>• Samples observations into buckets<br/>• Example: request_duration_seconds<br/>• Use for: Latency distributions, percentiles"]
-
-    style Counter fill:#3b82f6,color:#fff
-    style Gauge fill:#8b5cf6,color:#fff
-    style Histogram fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <Column gap="md">
+    <Box color={colors.blue} variant="filled" size="lg">
+      <div>
+        <div style={{fontWeight: 'bold', marginBottom: '0.5em', fontSize: '1.1em'}}>Counter</div>
+        <div style={{fontSize: '0.9em'}}>• Always increases or resets</div>
+        <div style={{fontSize: '0.9em'}}>• Example: http_requests_total = 15,234</div>
+        <div style={{fontSize: '0.9em'}}>• Use for: Counting events, calculating rates</div>
+      </div>
+    </Box>
+    <Box color={colors.purple} variant="filled" size="lg">
+      <div>
+        <div style={{fontWeight: 'bold', marginBottom: '0.5em', fontSize: '1.1em'}}>Gauge</div>
+        <div style={{fontSize: '0.9em'}}>• Can go up or down</div>
+        <div style={{fontSize: '0.9em'}}>• Example: current_temperature = 72.5</div>
+        <div style={{fontSize: '0.9em'}}>• Use for: Current values that fluctuate</div>
+      </div>
+    </Box>
+    <Box color={colors.green} variant="filled" size="lg">
+      <div>
+        <div style={{fontWeight: 'bold', marginBottom: '0.5em', fontSize: '1.1em'}}>Histogram</div>
+        <div style={{fontSize: '0.9em'}}>• Samples observations into buckets</div>
+        <div style={{fontSize: '0.9em'}}>• Example: request_duration_seconds</div>
+        <div style={{fontSize: '0.9em'}}>• Use for: Latency distributions, percentiles</div>
+      </div>
+    </Box>
+  </Column>
+</DiagramContainer>
 
 **Metrics vs. Traces:**
 
@@ -133,19 +210,45 @@ graph TD
 
 **In technical terms:** Logs are timestamped, structured records of discrete events that occur during system operation.
 
-```mermaid
-graph TD
-    Traditional["Traditional Log unstructured<br/>2024-01-15 14:32:05 ERROR Failed to connect to database"]
-    Structured["Structured Log better<br/>timestamp, level, message, service"]
-    OTel["OpenTelemetry Log best<br/>timestamp, severity, body<br/>+ trace_id, span_id<br/>+ semantic attributes"]
-
-    Traditional --> Structured
-    Structured --> OTel
-
-    style Traditional fill:#ef4444,color:#fff
-    style Structured fill:#f59e0b,color:#fff
-    style OTel fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <ProcessFlow
+    steps={[
+      {
+        title: "Traditional Log",
+        description: (
+          <div>
+            <div style={{fontSize: '0.85em', fontWeight: 'bold', marginBottom: '0.3em'}}>Unstructured</div>
+            <div style={{fontSize: '0.8em', fontStyle: 'italic'}}>2024-01-15 14:32:05 ERROR Failed to connect to database</div>
+          </div>
+        ),
+        color: colors.red
+      },
+      {
+        title: "Structured Log",
+        description: (
+          <div>
+            <div style={{fontSize: '0.85em', fontWeight: 'bold', marginBottom: '0.3em'}}>Better</div>
+            <div style={{fontSize: '0.85em'}}>timestamp, level, message, service</div>
+          </div>
+        ),
+        color: colors.orange
+      },
+      {
+        title: "OpenTelemetry Log",
+        description: (
+          <div>
+            <div style={{fontSize: '0.85em', fontWeight: 'bold', marginBottom: '0.3em'}}>Best</div>
+            <div style={{fontSize: '0.85em'}}>timestamp, severity, body</div>
+            <div style={{fontSize: '0.85em'}}>+ trace_id, span_id</div>
+            <div style={{fontSize: '0.85em'}}>+ semantic attributes</div>
+          </div>
+        ),
+        color: colors.green
+      }
+    ]}
+    direction="horizontal"
+  />
+</DiagramContainer>
 
 > **💡 Insight**
 >
@@ -161,19 +264,58 @@ graph TD
 
 **In technical terms:** Context is metadata that propagates through your system, linking telemetry data across service boundaries.
 
-```mermaid
-graph LR
-    A["Service A<br/>Create Trace Context<br/>Span A<br/>trace_id: abc<br/>span_id: 001<br/>parent: null"]
-    B["Service B<br/>Extract & Continue<br/>Span B<br/>trace_id: abc<br/>span_id: 002<br/>parent: 001"]
-    C["Service C<br/>Extract & Continue<br/>Span C<br/>trace_id: abc<br/>span_id: 003<br/>parent: 002"]
-
-    A -->|"HTTP Headers:<br/>traceparent<br/>tracestate"| B
-    B -->|"gRPC Metadata:<br/>traceparent<br/>tracestate"| C
-
-    style A fill:#3b82f6,color:#fff
-    style B fill:#8b5cf6,color:#fff
-    style C fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <ProcessFlow
+    steps={[
+      {
+        title: "Service A",
+        description: (
+          <div>
+            <div style={{fontSize: '0.85em', fontWeight: 'bold', marginBottom: '0.3em'}}>Create Trace Context</div>
+            <div style={{fontSize: '0.8em'}}>Span A</div>
+            <div style={{fontSize: '0.8em'}}>trace_id: abc</div>
+            <div style={{fontSize: '0.8em'}}>span_id: 001</div>
+            <div style={{fontSize: '0.8em'}}>parent: null</div>
+          </div>
+        ),
+        icon: "🌐",
+        color: colors.blue
+      },
+      {
+        title: "Service B",
+        description: (
+          <div>
+            <div style={{fontSize: '0.85em', fontWeight: 'bold', marginBottom: '0.3em'}}>Extract & Continue</div>
+            <div style={{fontSize: '0.8em'}}>Span B</div>
+            <div style={{fontSize: '0.8em'}}>trace_id: abc</div>
+            <div style={{fontSize: '0.8em'}}>span_id: 002</div>
+            <div style={{fontSize: '0.8em'}}>parent: 001</div>
+          </div>
+        ),
+        icon: "🔄",
+        color: colors.purple
+      },
+      {
+        title: "Service C",
+        description: (
+          <div>
+            <div style={{fontSize: '0.85em', fontWeight: 'bold', marginBottom: '0.3em'}}>Extract & Continue</div>
+            <div style={{fontSize: '0.8em'}}>Span C</div>
+            <div style={{fontSize: '0.8em'}}>trace_id: abc</div>
+            <div style={{fontSize: '0.8em'}}>span_id: 003</div>
+            <div style={{fontSize: '0.8em'}}>parent: 002</div>
+          </div>
+        ),
+        icon: "✅",
+        color: colors.green
+      }
+    ]}
+    direction="horizontal"
+  />
+  <div style={{textAlign: 'center', marginTop: '1em', fontSize: '0.9em', color: '#64748b'}}>
+    <div>HTTP Headers / gRPC Metadata: traceparent, tracestate</div>
+  </div>
+</DiagramContainer>
 
 **What propagates:**
 
@@ -219,16 +361,43 @@ cloud.region: "us-east-1"
 
 **In technical terms:** Semantic conventions are standardized attribute names and values defined by OpenTelemetry.
 
-```mermaid
-graph TD
-    HTTP["HTTP Requests<br/>• http.request.method → GET, POST<br/>• http.response.status_code → 200, 404, 500<br/>• url.path → /api/users"]
-    DB["Database Operations<br/>• db.system → postgresql, mysql<br/>• db.name → users_db<br/>• db.operation → SELECT, INSERT"]
-    MSG["Messaging<br/>• messaging.system → kafka, rabbitmq<br/>• messaging.destination.name → orders-queue<br/>• messaging.operation → publish, receive"]
-
-    style HTTP fill:#3b82f6,color:#fff
-    style DB fill:#8b5cf6,color:#fff
-    style MSG fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <CardGrid
+    columns={3}
+    cards={[
+      {
+        title: "HTTP Requests",
+        icon: "🌐",
+        color: colors.blue,
+        items: [
+          "http.request.method → GET, POST",
+          "http.response.status_code → 200, 404, 500",
+          "url.path → /api/users"
+        ]
+      },
+      {
+        title: "Database Operations",
+        icon: "💾",
+        color: colors.purple,
+        items: [
+          "db.system → postgresql, mysql",
+          "db.name → users_db",
+          "db.operation → SELECT, INSERT"
+        ]
+      },
+      {
+        title: "Messaging",
+        icon: "📨",
+        color: colors.green,
+        items: [
+          "messaging.system → kafka, rabbitmq",
+          "messaging.destination.name → orders-queue",
+          "messaging.operation → publish, receive"
+        ]
+      }
+    ]}
+  />
+</DiagramContainer>
 
 **Why conventions matter:**
 
@@ -251,19 +420,54 @@ graph TD
 
 **In technical terms:** OTLP is the native protocol for transmitting telemetry data, supporting gRPC and HTTP transports.
 
-```mermaid
-graph LR
-    App["Your App<br/>SDK<br/>Traces<br/>Metrics<br/>Logs"]
-    Collector["Collector<br/>Receiver<br/>↓<br/>Process<br/>↓<br/>Exporter"]
-    Backend["Backend<br/>Any OTLP<br/>Backend"]
-
-    App -->|"OTLP<br/>gRPC or HTTP"| Collector
-    Collector -->|"OTLP or<br/>other"| Backend
-
-    style App fill:#3b82f6,color:#fff
-    style Collector fill:#8b5cf6,color:#fff
-    style Backend fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <ProcessFlow
+    steps={[
+      {
+        title: "Your App",
+        description: (
+          <div>
+            <div style={{fontSize: '0.85em', marginBottom: '0.3em'}}>SDK</div>
+            <div style={{fontSize: '0.85em'}}>• Traces</div>
+            <div style={{fontSize: '0.85em'}}>• Metrics</div>
+            <div style={{fontSize: '0.85em'}}>• Logs</div>
+          </div>
+        ),
+        icon: "📱",
+        color: colors.blue
+      },
+      {
+        title: "Collector",
+        description: (
+          <div>
+            <div style={{fontSize: '0.85em'}}>Receiver</div>
+            <div style={{fontSize: '0.85em', textAlign: 'center'}}>↓</div>
+            <div style={{fontSize: '0.85em'}}>Process</div>
+            <div style={{fontSize: '0.85em', textAlign: 'center'}}>↓</div>
+            <div style={{fontSize: '0.85em'}}>Exporter</div>
+          </div>
+        ),
+        icon: "🔄",
+        color: colors.purple
+      },
+      {
+        title: "Backend",
+        description: (
+          <div>
+            <div style={{fontSize: '0.85em'}}>Any OTLP</div>
+            <div style={{fontSize: '0.85em'}}>Backend</div>
+          </div>
+        ),
+        icon: "💾",
+        color: colors.green
+      }
+    ]}
+    direction="horizontal"
+  />
+  <div style={{textAlign: 'center', marginTop: '1em', fontSize: '0.9em', color: '#64748b'}}>
+    <div>OTLP (gRPC or HTTP)</div>
+  </div>
+</DiagramContainer>
 
 **OTLP characteristics:**
 
@@ -280,16 +484,34 @@ graph LR
 
 OpenTelemetry is designed for long-term stability:
 
-```mermaid
-graph TD
-    Stable["Stable APIs v1.0+<br/>• Never break backward compatibility<br/>• Safe to use in production<br/>• Any changes are purely additive"]
-    Experimental["Experimental Features<br/>• May change based on feedback<br/>• Clearly marked in documentation<br/>• Move to stable after proven"]
-    Deprecated["Deprecated Features<br/>• Will work for at least 1 year<br/>• Clear migration path provided<br/>• Warnings in documentation"]
-
-    style Stable fill:#10b981,color:#fff
-    style Experimental fill:#f59e0b,color:#fff
-    style Deprecated fill:#ef4444,color:#fff
-```
+<DiagramContainer>
+  <Column gap="md">
+    <Box color={colors.green} variant="filled" size="lg">
+      <div>
+        <div style={{fontWeight: 'bold', marginBottom: '0.5em', fontSize: '1.1em'}}>✅ Stable APIs v1.0+</div>
+        <div style={{fontSize: '0.9em'}}>• Never break backward compatibility</div>
+        <div style={{fontSize: '0.9em'}}>• Safe to use in production</div>
+        <div style={{fontSize: '0.9em'}}>• Any changes are purely additive</div>
+      </div>
+    </Box>
+    <Box color={colors.orange} variant="filled" size="lg">
+      <div>
+        <div style={{fontWeight: 'bold', marginBottom: '0.5em', fontSize: '1.1em'}}>🧪 Experimental Features</div>
+        <div style={{fontSize: '0.9em'}}>• May change based on feedback</div>
+        <div style={{fontSize: '0.9em'}}>• Clearly marked in documentation</div>
+        <div style={{fontSize: '0.9em'}}>• Move to stable after proven</div>
+      </div>
+    </Box>
+    <Box color={colors.red} variant="filled" size="lg">
+      <div>
+        <div style={{fontWeight: 'bold', marginBottom: '0.5em', fontSize: '1.1em'}}>⚠️ Deprecated Features</div>
+        <div style={{fontSize: '0.9em'}}>• Will work for at least 1 year</div>
+        <div style={{fontSize: '0.9em'}}>• Clear migration path provided</div>
+        <div style={{fontSize: '0.9em'}}>• Warnings in documentation</div>
+      </div>
+    </Box>
+  </Column>
+</DiagramContainer>
 
 > **💡 Insight**
 >

@@ -4,7 +4,7 @@ title: "Chapter 2: Why Use OpenTelemetry?"
 description: "Understanding the challenges of production monitoring and why OpenTelemetry is the solution for modern observability"
 ---
 
-import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@site/src/components/diagrams';
+import { CardGrid, TreeDiagram, Row, Box, Arrow, Column, Group, DiagramContainer, ProcessFlow, StackDiagram, colors } from '@site/src/components/diagrams';
 
 # 🎯 Chapter 2: Why Use OpenTelemetry?
 
@@ -43,28 +43,31 @@ import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@
 
 Most organizations have accumulated a patchwork of monitoring tools over time:
 
-```mermaid
-graph TD
-    APM["APM Tool<br/>(Vendor A)"]
-    LOG["Log Tool<br/>(Vendor B)"]
-    MET["Metrics Tool<br/>(Vendor C)"]
-    AGENT1["Proprietary<br/>Agent"]
-    AGENT2["Proprietary<br/>Agent"]
-    AGENT3["Proprietary<br/>Agent"]
-    APP["Your Services"]
-
-    APM --> AGENT1
-    LOG --> AGENT2
-    MET --> AGENT3
-    AGENT1 --> APP
-    AGENT2 --> APP
-    AGENT3 --> APP
-
-    style APM fill:#3b82f6,color:#fff
-    style LOG fill:#8b5cf6,color:#fff
-    style MET fill:#10b981,color:#fff
-    style APP fill:#f59e0b,color:#fff
-```
+<DiagramContainer title="The Monitoring Tool Chaos">
+  <Column gap="lg" align="center">
+    <Row gap="lg" align="center">
+      <Box color={colors.blue} variant="filled" size="lg">APM Tool<br/>(Vendor A)</Box>
+      <Box color={colors.purple} variant="filled" size="lg">Log Tool<br/>(Vendor B)</Box>
+      <Box color={colors.green} variant="filled" size="lg">Metrics Tool<br/>(Vendor C)</Box>
+    </Row>
+    <Row gap="md" align="center">
+      <Arrow direction="down" />
+      <Arrow direction="down" />
+      <Arrow direction="down" />
+    </Row>
+    <Row gap="lg" align="center">
+      <Box color={colors.slate} variant="outlined" size="md">Proprietary<br/>Agent</Box>
+      <Box color={colors.slate} variant="outlined" size="md">Proprietary<br/>Agent</Box>
+      <Box color={colors.slate} variant="outlined" size="md">Proprietary<br/>Agent</Box>
+    </Row>
+    <Row gap="md" align="center">
+      <Arrow direction="down" />
+      <Arrow direction="down" />
+      <Arrow direction="down" />
+    </Row>
+    <Box color={colors.orange} variant="filled" size="lg">Your Services</Box>
+  </Column>
+</DiagramContainer>
 
 **Problems with this approach:**
 
@@ -85,27 +88,24 @@ graph TD
 
 Production problems are fundamentally different from development bugs:
 
-```mermaid
-graph LR
-    subgraph DEV["Development Environment"]
-        D1["Single request at a time"]
-        D2["Consistent state"]
-        D3["Can add breakpoints"]
-        D4["Full access to system"]
-        D5["Reproducible issues"]
-    end
-
-    subgraph PROD["Production Environment"]
-        P1["Thousands of concurrent requests"]
-        P2["Constantly changing state"]
-        P3["Can only observe"]
-        P4["Distributed across services"]
-        P5["Intermittent, timing-dependent"]
-    end
-
-    style DEV fill:#10b981,color:#fff
-    style PROD fill:#ef4444,color:#fff
-```
+<DiagramContainer>
+  <Row gap="lg" align="start">
+    <Group title="Development Environment" color={colors.green} direction="column">
+      <Box color={colors.green} variant="subtle">Single request at a time</Box>
+      <Box color={colors.green} variant="subtle">Consistent state</Box>
+      <Box color={colors.green} variant="subtle">Can add breakpoints</Box>
+      <Box color={colors.green} variant="subtle">Full access to system</Box>
+      <Box color={colors.green} variant="subtle">Reproducible issues</Box>
+    </Group>
+    <Group title="Production Environment" color={colors.red} direction="column">
+      <Box color={colors.red} variant="subtle">Thousands of concurrent requests</Box>
+      <Box color={colors.red} variant="subtle">Constantly changing state</Box>
+      <Box color={colors.red} variant="subtle">Can only observe</Box>
+      <Box color={colors.red} variant="subtle">Distributed across services</Box>
+      <Box color={colors.red} variant="subtle">Intermittent, timing-dependent</Box>
+    </Group>
+  </Row>
+</DiagramContainer>
 
 ### Why Production Debugging Is Hard
 
@@ -139,25 +139,26 @@ Without correlated telemetry, each question requires searching through different
 | **Hard Context** | Explicit identifiers linking data | Trace ID, Span ID | 100% accurate |
 | **Soft Context** | Shared attributes that suggest relation | Timestamp, service name | Requires inference |
 
-```mermaid
-graph LR
-    subgraph HARD["Hard Context Example"]
-        LOG1["Log Entry<br/>trace_id: abc123"] --> TRACE1["Trace<br/>trace_id: abc123"]
-        TRACE1 --> SPAN1["Spans"]
-    end
-
-    subgraph SOFT["Soft Context Example"]
-        LOG2["Log Entry<br/>timestamp: 14:32:05"]
-        METRIC2["Metric<br/>timestamp: 14:32:00"]
-        LOG2 -.->|"Probably related"| METRIC2
-    end
-
-    style HARD fill:#10b981,color:#fff
-    style SOFT fill:#f59e0b,color:#fff
-    style LOG1 fill:#3b82f6,color:#fff
-    style TRACE1 fill:#3b82f6,color:#fff
-    style SPAN1 fill:#3b82f6,color:#fff
-```
+<DiagramContainer>
+  <Row gap="lg" align="start">
+    <Group title="Hard Context Example" color={colors.green} direction="column">
+      <Row gap="sm" align="center">
+        <Box color={colors.blue} variant="filled">Log Entry<br/>trace_id: abc123</Box>
+        <Arrow direction="right" />
+        <Box color={colors.blue} variant="filled">Trace<br/>trace_id: abc123</Box>
+        <Arrow direction="right" />
+        <Box color={colors.blue} variant="filled">Spans</Box>
+      </Row>
+    </Group>
+    <Group title="Soft Context Example" color={colors.orange} direction="column">
+      <Column gap="md" align="center">
+        <Box color={colors.slate} variant="outlined">Log Entry<br/>timestamp: 14:32:05</Box>
+        <Arrow direction="down" label="Probably related" color={colors.orange} />
+        <Box color={colors.slate} variant="outlined">Metric<br/>timestamp: 14:32:00</Box>
+      </Column>
+    </Group>
+  </Row>
+</DiagramContainer>
 
 > **💡 Insight**
 >
@@ -167,22 +168,31 @@ graph LR
 
 Telemetry works best in layers, each adding more detail:
 
-```mermaid
-graph TD
-    L4["Layer 4: Individual Events (Logs)<br/>Connection to DB failed"]
-    L3["Layer 3: Request Flow (Traces)<br/>Request took 500ms"]
-    L2["Layer 2: Aggregated Measurements<br/>P99 latency is 200ms"]
-    L1["Layer 1: System Health (Metrics)<br/>CPU at 80%"]
-
-    L4 --> L3
-    L3 --> L2
-    L2 --> L1
-
-    style L4 fill:#8b5cf6,color:#fff
-    style L3 fill:#3b82f6,color:#fff
-    style L2 fill:#10b981,color:#fff
-    style L1 fill:#f59e0b,color:#fff
-```
+<StackDiagram
+  title="Telemetry Layers"
+  layers={[
+    {
+      label: "Layer 4: Individual Events (Logs)",
+      color: colors.purple,
+      items: ["Connection to DB failed"]
+    },
+    {
+      label: "Layer 3: Request Flow (Traces)",
+      color: colors.blue,
+      items: ["Request took 500ms"]
+    },
+    {
+      label: "Layer 2: Aggregated Measurements",
+      color: colors.green,
+      items: ["P99 latency is 200ms"]
+    },
+    {
+      label: "Layer 1: System Health (Metrics)",
+      color: colors.orange,
+      items: ["CPU at 80%"]
+    }
+  ]}
+/>
 
 **How layers work together:**
 
@@ -196,23 +206,20 @@ graph TD
 
 **In technical terms:** Semantic conventions are standardized attribute names and values that ensure telemetry from different sources can be correlated and analyzed together.
 
-```mermaid
-graph TD
-    subgraph WITHOUT["Without Semantic Conventions"]
-        A1["Service A:<br/>{method: GET, path: /users}"]
-        A2["Service B:<br/>{http_method: get, url: /users}"]
-        A3["Service C:<br/>{request_type: GET, endpoint: /users}"]
-    end
-
-    subgraph WITH["With OpenTelemetry Semantic Conventions"]
-        B1["Service A:<br/>{http.request.method: GET, url.path: /users}"]
-        B2["Service B:<br/>{http.request.method: GET, url.path: /users}"]
-        B3["Service C:<br/>{http.request.method: GET, url.path: /users}"]
-    end
-
-    style WITHOUT fill:#ef4444,color:#fff
-    style WITH fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <Row gap="lg" align="start">
+    <Group title="Without Semantic Conventions" color={colors.red} direction="column">
+      <Box color={colors.red} variant="subtle" size="md">Service A:<br/>{`{method: GET, path: /users}`}</Box>
+      <Box color={colors.red} variant="subtle" size="md">Service B:<br/>{`{http_method: get, url: /users}`}</Box>
+      <Box color={colors.red} variant="subtle" size="md">Service C:<br/>{`{request_type: GET, endpoint: /users}`}</Box>
+    </Group>
+    <Group title="With OpenTelemetry Semantic Conventions" color={colors.green} direction="column">
+      <Box color={colors.green} variant="subtle" size="md">Service A:<br/>{`{http.request.method: GET, url.path: /users}`}</Box>
+      <Box color={colors.green} variant="subtle" size="md">Service B:<br/>{`{http.request.method: GET, url.path: /users}`}</Box>
+      <Box color={colors.green} variant="subtle" size="md">Service C:<br/>{`{http.request.method: GET, url.path: /users}`}</Box>
+    </Group>
+  </Row>
+</DiagramContainer>
 
 > **💡 Insight**
 >
@@ -241,25 +248,30 @@ OpenTelemetry addresses every challenge we've discussed:
 
 ### 🔧 Architecture That Solves Real Problems
 
-```mermaid
-graph TD
-    APP["Your Application<br/>OpenTelemetry SDK (single library)<br/>Traces • Metrics • Logs • Context Prop."]
-    COL["OpenTelemetry Collector<br/>(transform, filter, route)"]
-    T1["Tool A<br/>(any vendor)"]
-    T2["Tool B<br/>(any vendor)"]
-    T3["Tool C<br/>(self-hosted)"]
-
-    APP -->|"OTLP (standard protocol)"| COL
-    COL --> T1
-    COL --> T2
-    COL --> T3
-
-    style APP fill:#3b82f6,color:#fff
-    style COL fill:#8b5cf6,color:#fff
-    style T1 fill:#10b981,color:#fff
-    style T2 fill:#10b981,color:#fff
-    style T3 fill:#10b981,color:#fff
-```
+<DiagramContainer title="OpenTelemetry Architecture">
+  <Column gap="lg" align="center">
+    <Box color={colors.blue} variant="filled" size="lg">
+      Your Application<br/>
+      OpenTelemetry SDK (single library)<br/>
+      Traces • Metrics • Logs • Context Prop.
+    </Box>
+    <Arrow direction="down" label="OTLP (standard protocol)" color={colors.blue} />
+    <Box color={colors.purple} variant="filled" size="lg">
+      OpenTelemetry Collector<br/>
+      (transform, filter, route)
+    </Box>
+    <Row gap="md" align="center">
+      <Arrow direction="down" />
+      <Arrow direction="down" />
+      <Arrow direction="down" />
+    </Row>
+    <Row gap="lg" align="center">
+      <Box color={colors.green} variant="filled">Tool A<br/>(any vendor)</Box>
+      <Box color={colors.green} variant="filled">Tool B<br/>(any vendor)</Box>
+      <Box color={colors.green} variant="filled">Tool C<br/>(self-hosted)</Box>
+    </Row>
+  </Column>
+</DiagramContainer>
 
 ### ✅ How OpenTelemetry Solves Each Problem
 

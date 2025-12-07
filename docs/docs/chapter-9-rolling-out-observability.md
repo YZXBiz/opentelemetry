@@ -4,7 +4,7 @@ title: "Chapter 9: Rolling Out Observability"
 description: "Organizational strategies for adopting OpenTelemetry - deep vs wide, code vs collection, and future trends"
 ---
 
-import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@site/src/components/diagrams';
+import { CardGrid, TreeDiagram, Row, Box, Arrow, Column, Group, DiagramContainer, ProcessFlow, StackDiagram, colors } from '@site/src/components/diagrams';
 
 # 🚀 Chapter 9: Rolling Out Observability
 
@@ -44,19 +44,25 @@ import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@
 
 Every rollout decision falls along one of three axes:
 
-```mermaid
-graph LR
-    A["Deep<br/>(one service in detail)"] ---|"←─────────────────→"| B["Wide<br/>(many services, basic telemetry)"]
-    C["Code<br/>(SDK instrumentation)"] ---|"←─────────────────→"| D["Collection<br/>(Collector/pipeline focus)"]
-    E["Centralized<br/>(platform team drives)"] ---|"←─────────────────→"| F["Decentralized<br/>(service teams drive)"]
-
-    style A fill:#3b82f6,color:#fff
-    style B fill:#3b82f6,color:#fff
-    style C fill:#8b5cf6,color:#fff
-    style D fill:#8b5cf6,color:#fff
-    style E fill:#10b981,color:#fff
-    style F fill:#10b981,color:#fff
-```
+<DiagramContainer title="Three Axes of Observability Decision-Making">
+  <Column gap="lg" align="center">
+    <Row gap="lg" align="center">
+      <Box color={colors.blue} variant="filled">Deep<br/>(one service in detail)</Box>
+      <Arrow direction="right" label="←─────────────────→" />
+      <Box color={colors.blue} variant="filled">Wide<br/>(many services, basic telemetry)</Box>
+    </Row>
+    <Row gap="lg" align="center">
+      <Box color={colors.purple} variant="filled">Code<br/>(SDK instrumentation)</Box>
+      <Arrow direction="right" label="←─────────────────→" />
+      <Box color={colors.purple} variant="filled">Collection<br/>(Collector/pipeline focus)</Box>
+    </Row>
+    <Row gap="lg" align="center">
+      <Box color={colors.green} variant="filled">Centralized<br/>(platform team drives)</Box>
+      <Arrow direction="right" label="←─────────────────→" />
+      <Box color={colors.green} variant="filled">Decentralized<br/>(service teams drive)</Box>
+    </Row>
+  </Column>
+</DiagramContainer>
 
 ### 2.1. Deep vs. Wide
 
@@ -111,26 +117,29 @@ Example: SaaS startup migrating from OpenTracing
 **Code:** Focus on SDK instrumentation in applications
 **Collection:** Focus on Collector pipelines and infrastructure
 
-```mermaid
-graph LR
-    A["Code-First<br/>(Service Teams)"] --> B["I want to trace<br/>my service"]
-    B --> C["• SDK setup<br/>• Custom spans<br/>• Business metrics"]
-
-    D["Collection-First<br/>(Platform Teams)"] --> E["I want to collect<br/>everything first"]
-    E --> F["• Collector deploy<br/>• Pipeline config<br/>• Transformations"]
-
-    style A fill:#3b82f6,color:#fff
-    style B fill:#3b82f6,color:#fff
-    style C fill:#3b82f6,color:#fff
-    style D fill:#8b5cf6,color:#fff
-    style E fill:#8b5cf6,color:#fff
-    style F fill:#8b5cf6,color:#fff
-```
+<DiagramContainer title="Code-First vs Collection-First Approaches">
+  <Row gap="lg" align="start">
+    <Column gap="md" align="center">
+      <Box color={colors.blue} variant="filled" size="lg">Code-First<br/>(Service Teams)</Box>
+      <Arrow direction="down" />
+      <Box color={colors.blue} variant="outlined">I want to trace<br/>my service</Box>
+      <Arrow direction="down" />
+      <Box color={colors.blue} variant="subtle">• SDK setup<br/>• Custom spans<br/>• Business metrics</Box>
+    </Column>
+    <Column gap="md" align="center">
+      <Box color={colors.purple} variant="filled" size="lg">Collection-First<br/>(Platform Teams)</Box>
+      <Arrow direction="down" />
+      <Box color={colors.purple} variant="outlined">I want to collect<br/>everything first</Box>
+      <Arrow direction="down" />
+      <Box color={colors.purple} variant="subtle">• Collector deploy<br/>• Pipeline config<br/>• Transformations</Box>
+    </Column>
+  </Row>
+</DiagramContainer>
 
 **Ideal approach:** Both, evolving together
 
 ```
-eBay's Approach (2021)
+ eBay's Approach (2021)
 ──────────────────────
 
 1. Platform team evaluated Collector for metrics/logs collection
@@ -152,33 +161,32 @@ eBay's Approach (2021)
 **Centralized:** Platform team drives adoption
 **Decentralized:** Service teams adopt independently
 
-```mermaid
-graph TD
-    subgraph Centralized["Centralized Rollout"]
-        P["Platform Team<br/>• Defines standards<br/>• Deploys Collectors<br/>• Provides SDK wrappers<br/>• Manages backends"]
-        P --> SA["Service A<br/>(adopts standards)"]
-        P --> SB["Service B<br/>(adopts standards)"]
-        P --> SC["Service C<br/>(adopts standards)"]
-    end
-
-    subgraph Decentralized["Decentralized Rollout"]
-        DA["Service A<br/>Adopts OTel<br/>(own way)"]
-        DB["Service B<br/>Adopts OTel<br/>(own way)"]
-        DC["Service C<br/>Adopts OTel<br/>(own way)"]
-        DA --> H["Hope they're<br/>compatible..."]
-        DB --> H
-        DC --> H
-    end
-
-    style P fill:#10b981,color:#fff
-    style SA fill:#3b82f6,color:#fff
-    style SB fill:#3b82f6,color:#fff
-    style SC fill:#3b82f6,color:#fff
-    style DA fill:#f59e0b,color:#fff
-    style DB fill:#f59e0b,color:#fff
-    style DC fill:#f59e0b,color:#fff
-    style H fill:#ef4444,color:#fff
-```
+<DiagramContainer title="Centralized vs Decentralized Rollout Strategies">
+  <Row gap="lg" align="start">
+    <Group title="Centralized Rollout" color={colors.green} direction="column">
+      <Column gap="md" align="center">
+        <Box color={colors.green} variant="filled" size="lg">Platform Team<br/>• Defines standards<br/>• Deploys Collectors<br/>• Provides SDK wrappers<br/>• Manages backends</Box>
+        <Arrow direction="down" />
+        <Row gap="sm">
+          <Box color={colors.blue} variant="outlined">Service A<br/>(adopts standards)</Box>
+          <Box color={colors.blue} variant="outlined">Service B<br/>(adopts standards)</Box>
+          <Box color={colors.blue} variant="outlined">Service C<br/>(adopts standards)</Box>
+        </Row>
+      </Column>
+    </Group>
+    <Group title="Decentralized Rollout" color={colors.red} direction="column">
+      <Column gap="md" align="center">
+        <Row gap="sm">
+          <Box color={colors.orange} variant="outlined">Service A<br/>Adopts OTel<br/>(own way)</Box>
+          <Box color={colors.orange} variant="outlined">Service B<br/>Adopts OTel<br/>(own way)</Box>
+          <Box color={colors.orange} variant="outlined">Service C<br/>Adopts OTel<br/>(own way)</Box>
+        </Row>
+        <Arrow direction="down" />
+        <Box color={colors.red} variant="filled">Hope they're<br/>compatible...</Box>
+      </Column>
+    </Group>
+  </Row>
+</DiagramContainer>
 
 **Case Study: Farfetch (2000+ engineers)**
 
@@ -215,16 +223,13 @@ OpenTelemetry is crossing from early adopters to mainstream. What's next?
 
 **Use traces to validate system behavior:**
 
-```mermaid
-graph TD
-    A["Baseline Trace (known good)<br/>Service A (50ms) → Service B (100ms) → DB (20ms)<br/>Total: 170ms, Status: OK"]
-    A --> B["Compare"]
-    B --> C["New Deployment Trace<br/>Service A (50ms) → Service B (500ms) → DB (20ms)<br/>Total: 570ms, Status: OK ⚠️ SLOW!"]
-
-    style A fill:#10b981,color:#fff
-    style B fill:#3b82f6,color:#fff
-    style C fill:#ef4444,color:#fff
-```
+<DiagramContainer title="Trace-Based Testing">
+  <Column gap="md" align="center">
+    <Box color={colors.green} variant="filled" size="lg">Baseline Trace (known good)<br/>Service A (50ms) → Service B (100ms) → DB (20ms)<br/>Total: 170ms, Status: OK</Box>
+    <Arrow direction="down" label="Compare" />
+    <Box color={colors.red} variant="filled" size="lg">New Deployment Trace<br/>Service A (50ms) → Service B (500ms) → DB (20ms)<br/>Total: 570ms, Status: OK ⚠️ SLOW!</Box>
+  </Column>
+</DiagramContainer>
 
 **Applications:**
 - Canary deployments with trace comparison
@@ -257,26 +262,48 @@ Green Observability (emerging):
 
 **Observing AI/ML systems has unique requirements:**
 
-```mermaid
-graph TD
-    A["AI Observability Use Cases"]
-    A --> B["1. Training Observability"]
-    B --> B1["• Track model training runs<br/>• Monitor hyperparameter experiments<br/>• Trace data pipeline transformations"]
-
-    A --> C["2. Inference Observability"]
-    C --> C1["• Trace retrieval + generation in RAG systems<br/>• Monitor token usage and costs<br/>• Track response latency distributions"]
-
-    A --> D["3. User Experience Observability"]
-    D --> D1["• Capture user satisfaction signals<br/>• Correlate feedback with specific model responses<br/>• Sample traces where users were unhappy"]
-
-    style A fill:#8b5cf6,color:#fff
-    style B fill:#3b82f6,color:#fff
-    style B1 fill:#3b82f6,color:#fff
-    style C fill:#10b981,color:#fff
-    style C1 fill:#10b981,color:#fff
-    style D fill:#f59e0b,color:#fff
-    style D1 fill:#f59e0b,color:#fff
-```
+<TreeDiagram
+  root={{
+    label: "AI Observability Use Cases",
+    color: colors.purple,
+    icon: "🤖",
+    children: [
+      {
+        label: "1. Training Observability",
+        color: colors.blue,
+        icon: "🎓",
+        children: [
+          {
+            label: "• Track model training runs\n• Monitor hyperparameter experiments\n• Trace data pipeline transformations",
+            color: colors.blue
+          }
+        ]
+      },
+      {
+        label: "2. Inference Observability",
+        color: colors.green,
+        icon: "⚡",
+        children: [
+          {
+            label: "• Trace retrieval + generation in RAG systems\n• Monitor token usage and costs\n• Track response latency distributions",
+            color: colors.green
+          }
+        ]
+      },
+      {
+        label: "3. User Experience Observability",
+        color: colors.orange,
+        icon: "👤",
+        children: [
+          {
+            label: "• Capture user satisfaction signals\n• Correlate feedback with specific model responses\n• Sample traces where users were unhappy",
+            color: colors.orange
+          }
+        ]
+      }
+    ]
+  }}
+/>
 
 ---
 
@@ -326,26 +353,48 @@ Organizational Readiness
 
 ### The Golden Rules
 
-```mermaid
-graph TD
-    A["OpenTelemetry Rollout Maxims"]
-    A --> B["1. Do no harm, break no alerts"]
-    B --> B1["Don't break existing monitoring!<br/>Run old and new in parallel during migration."]
-
-    A --> C["2. Prioritize value"]
-    C --> C1["What are you getting out of OpenTelemetry?<br/>State it clearly. Repeat it often.<br/>Keep everyone focused."]
-
-    A --> D["3. Don't forget the business"]
-    D --> D1["Observability helps the whole organization.<br/>Involve stakeholders beyond engineering.<br/>Show how telemetry connects to business outcomes."]
-
-    style A fill:#8b5cf6,color:#fff
-    style B fill:#3b82f6,color:#fff
-    style B1 fill:#3b82f6,color:#fff
-    style C fill:#10b981,color:#fff
-    style C1 fill:#10b981,color:#fff
-    style D fill:#f59e0b,color:#fff
-    style D1 fill:#f59e0b,color:#fff
-```
+<TreeDiagram
+  root={{
+    label: "OpenTelemetry Rollout Maxims",
+    color: colors.purple,
+    icon: "📜",
+    children: [
+      {
+        label: "1. Do no harm, break no alerts",
+        color: colors.blue,
+        icon: "🛡️",
+        children: [
+          {
+            label: "Don't break existing monitoring!\nRun old and new in parallel during migration.",
+            color: colors.blue
+          }
+        ]
+      },
+      {
+        label: "2. Prioritize value",
+        color: colors.green,
+        icon: "💎",
+        children: [
+          {
+            label: "What are you getting out of OpenTelemetry?\nState it clearly. Repeat it often.\nKeep everyone focused.",
+            color: colors.green
+          }
+        ]
+      },
+      {
+        label: "3. Don't forget the business",
+        color: colors.orange,
+        icon: "💼",
+        children: [
+          {
+            label: "Observability helps the whole organization.\nInvolve stakeholders beyond engineering.\nShow how telemetry connects to business outcomes.",
+            color: colors.orange
+          }
+        ]
+      }
+    ]
+  }}
+/>
 
 ---
 

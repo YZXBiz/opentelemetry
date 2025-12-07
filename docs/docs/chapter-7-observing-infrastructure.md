@@ -4,7 +4,7 @@ title: "Chapter 7: Observing Infrastructure"
 description: "Cloud providers, Kubernetes, serverless, and async workflows - infrastructure observability with OpenTelemetry"
 ---
 
-import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@site/src/components/diagrams';
+import { CardGrid, TreeDiagram, Row, Box, Arrow, Column, Group, DiagramContainer, ProcessFlow, StackDiagram, colors } from '@site/src/components/diagrams';
 
 # 🖥️ Chapter 7: Observing Infrastructure
 
@@ -43,14 +43,24 @@ import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@
 
 Infrastructure observability differs from application observability in an important way: **context**.
 
-```mermaid
-graph LR
-    A["Application Observability<br/>'Request X took 500ms'<br/><br/>High correlation with<br/>specific requests"]
-    B["Infrastructure Observability<br/>'CPU was at 95% when request X<br/>ran on pod Y in node Z'<br/><br/>Often shared resources<br/>(many requests, same infra)"]
-
-    style A fill:#3b82f6,color:#fff
-    style B fill:#8b5cf6,color:#fff
-```
+<DiagramContainer>
+  <Row gap="lg" align="center">
+    <Box color={colors.blue} variant="filled" size="lg">
+      <strong>Application Observability</strong><br/>
+      'Request X took 500ms'<br/><br/>
+      High correlation with<br/>
+      specific requests
+    </Box>
+    <Arrow direction="right" />
+    <Box color={colors.purple} variant="filled" size="lg">
+      <strong>Infrastructure Observability</strong><br/>
+      'CPU was at 95% when request X<br/>
+      ran on pod Y in node Z'<br/><br/>
+      Often shared resources<br/>
+      (many requests, same infra)
+    </Box>
+  </Row>
+</DiagramContainer>
 
 **Two key questions to ask:**
 
@@ -61,16 +71,26 @@ graph LR
 
 ### The Infrastructure Taxonomy
 
-```mermaid
-graph TD
-    A["<b>Providers</b><br/>(source of infrastructure)<br/><br/>• Datacenters<br/>• Cloud Providers (AWS, GCP, Azure)<br/>• Colocation facilities"]
-    B["<b>Platforms</b><br/>(abstractions over providers)<br/><br/>• Container orchestration (Kubernetes)<br/>• Serverless (Lambda, Cloud Functions)<br/>• CI/CD (Jenkins, GitHub Actions)<br/>• Managed services (RDS, Cloud SQL)"]
-
-    A --> B
-
-    style A fill:#3b82f6,color:#fff
-    style B fill:#8b5cf6,color:#fff
-```
+<DiagramContainer>
+  <Column gap="md" align="center">
+    <Box color={colors.blue} variant="filled" size="lg">
+      <strong>Providers</strong><br/>
+      (source of infrastructure)<br/><br/>
+      • Datacenters<br/>
+      • Cloud Providers (AWS, GCP, Azure)<br/>
+      • Colocation facilities
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.purple} variant="filled" size="lg">
+      <strong>Platforms</strong><br/>
+      (abstractions over providers)<br/><br/>
+      • Container orchestration (Kubernetes)<br/>
+      • Serverless (Lambda, Cloud Functions)<br/>
+      • CI/CD (Jenkins, GitHub Actions)<br/>
+      • Managed services (RDS, Cloud SQL)
+    </Box>
+  </Column>
+</DiagramContainer>
 
 ---
 
@@ -80,19 +100,26 @@ graph TD
 
 Cloud providers offer a firehose of telemetry. Your job is to collect what's relevant:
 
-```mermaid
-graph TD
-    A["What you usually look at<br/>Dashboards, alerts<br/>(5% of data)"]
-    B["Surface"]
-    C["What's available but rarely used<br/>API calls, detailed metrics,<br/>audit logs<br/>(95% of data)"]
-
-    A --> B
-    B --> C
-
-    style A fill:#10b981,color:#fff
-    style B fill:#f59e0b,color:#fff
-    style C fill:#3b82f6,color:#fff
-```
+<DiagramContainer>
+  <Column gap="md" align="center">
+    <Box color={colors.green} variant="filled" size="md">
+      What you usually look at<br/>
+      Dashboards, alerts<br/>
+      (5% of data)
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.orange} variant="filled" size="md">
+      Surface
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.blue} variant="filled" size="md">
+      What's available but rarely used<br/>
+      API calls, detailed metrics,<br/>
+      audit logs<br/>
+      (95% of data)
+    </Box>
+  </Column>
+</DiagramContainer>
 
 **Categories of cloud services:**
 
@@ -128,25 +155,29 @@ Practical Guidelines
 
 ### 3.2. Push vs. Pull
 
-```mermaid
-graph LR
-    subgraph Push["Push Model (OTLP default)"]
-        S1[Service] -->|push| C1[Collector]
-        C1 --> B1[Backend]
-    end
+<DiagramContainer>
+  <Column gap="lg">
+    <Group title="Push Model (OTLP default)" color={colors.blue}>
+      <Row gap="md" align="center">
+        <Box color={colors.blue} variant="filled">Service</Box>
+        <Arrow direction="right" label="push" />
+        <Box color={colors.purple} variant="filled">Collector</Box>
+        <Arrow direction="right" />
+        <Box color={colors.green} variant="filled">Backend</Box>
+      </Row>
+    </Group>
 
-    subgraph Pull["Pull Model (Prometheus style)"]
-        C2[Collector] -->|pull| S2["Service<br/>/metrics"]
-        C2 --> B2[Backend]
-    end
-
-    style S1 fill:#3b82f6,color:#fff
-    style C1 fill:#8b5cf6,color:#fff
-    style B1 fill:#10b981,color:#fff
-    style S2 fill:#3b82f6,color:#fff
-    style C2 fill:#8b5cf6,color:#fff
-    style B2 fill:#10b981,color:#fff
-```
+    <Group title="Pull Model (Prometheus style)" color={colors.purple}>
+      <Row gap="md" align="center">
+        <Box color={colors.purple} variant="filled">Collector</Box>
+        <Arrow direction="right" label="pull" />
+        <Box color={colors.blue} variant="filled">Service<br/>/metrics</Box>
+        <Arrow direction="right" />
+        <Box color={colors.green} variant="filled">Backend</Box>
+      </Row>
+    </Group>
+  </Column>
+</DiagramContainer>
 
 **OpenTelemetry Collector can do both:**
 
@@ -179,35 +210,58 @@ service:
 
 Kubernetes is complex enough to deserve special attention.
 
-```mermaid
-graph TD
-    A["<b>Cluster Level</b><br/><br/>• kube-state-metrics (object states)<br/>• API server metrics (request rates, latencies)<br/>• etcd metrics (cluster health)"]
-    B["<b>Node Level</b><br/><br/>• kubelet metrics (pod lifecycle)<br/>• node-exporter (host metrics)<br/>• Container runtime metrics"]
-    C["<b>Pod Level</b><br/><br/>• Application telemetry<br/>• Sidecar container telemetry<br/>• Resource usage (CPU, memory)"]
-
-    A --> B
-    B --> C
-
-    style A fill:#3b82f6,color:#fff
-    style B fill:#8b5cf6,color:#fff
-    style C fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <Column gap="md" align="center">
+    <Box color={colors.blue} variant="filled" size="lg">
+      <strong>Cluster Level</strong><br/><br/>
+      • kube-state-metrics (object states)<br/>
+      • API server metrics (request rates, latencies)<br/>
+      • etcd metrics (cluster health)
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.purple} variant="filled" size="lg">
+      <strong>Node Level</strong><br/><br/>
+      • kubelet metrics (pod lifecycle)<br/>
+      • node-exporter (host metrics)<br/>
+      • Container runtime metrics
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.green} variant="filled" size="lg">
+      <strong>Pod Level</strong><br/><br/>
+      • Application telemetry<br/>
+      • Sidecar container telemetry<br/>
+      • Resource usage (CPU, memory)
+    </Box>
+  </Column>
+</DiagramContainer>
 
 **OpenTelemetry Operator for Kubernetes:**
 
-```mermaid
-graph TD
-    A["<b>Collector Management</b><br/><br/>• DaemonSet: Collector on every node<br/>• Sidecar: Collector in every pod<br/>• Deployment: Collector pool<br/>• StatefulSet: Stateful collector pool"]
-    B["<b>Auto-Instrumentation Injection</b><br/><br/>• Java, Python, Node.js, .NET, Go<br/>• Injects via pod annotation<br/>• No code changes required"]
-    C["<b>Target Allocator</b><br/><br/>• Discovers Prometheus endpoints<br/>• Distributes scrape jobs across collectors<br/>• Enables horizontal scaling"]
-
-    A --> B
-    B --> C
-
-    style A fill:#3b82f6,color:#fff
-    style B fill:#8b5cf6,color:#fff
-    style C fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <Column gap="md" align="center">
+    <Box color={colors.blue} variant="filled" size="lg">
+      <strong>Collector Management</strong><br/><br/>
+      • DaemonSet: Collector on every node<br/>
+      • Sidecar: Collector in every pod<br/>
+      • Deployment: Collector pool<br/>
+      • StatefulSet: Stateful collector pool
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.purple} variant="filled" size="lg">
+      <strong>Auto-Instrumentation Injection</strong><br/><br/>
+      • Java, Python, Node.js, .NET, Go<br/>
+      • Injects via pod annotation<br/>
+      • No code changes required
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.green} variant="filled" size="lg">
+      <strong>Target Allocator</strong><br/><br/>
+      • Discovers Prometheus endpoints<br/>
+      • Distributes scrape jobs across collectors<br/>
+      • Enables horizontal scaling
+    </Box>
+  </Column>
+</DiagramContainer>
 
 **Example: Auto-instrumentation injection**
 
@@ -236,19 +290,27 @@ spec:
 
 Serverless introduces unique challenges:
 
-```mermaid
-graph TD
-    A["<b>Challenge: Ephemeral execution</b><br/><br/>Function starts → Runs → Dies<br/>Must export telemetry before death!"]
-    B["<b>Challenge: Cold starts</b><br/><br/>First invocation may be slow<br/>Need to track cold vs. warm performance separately"]
-    C["<b>Challenge: No persistent collector</b><br/><br/>Can't run sidecar that outlives function<br/>Must push directly or use extension"]
-
-    A --> B
-    B --> C
-
-    style A fill:#ef4444,color:#fff
-    style B fill:#f59e0b,color:#fff
-    style C fill:#8b5cf6,color:#fff
-```
+<DiagramContainer>
+  <Column gap="md" align="center">
+    <Box color={colors.red} variant="filled" size="lg">
+      <strong>Challenge: Ephemeral execution</strong><br/><br/>
+      Function starts → Runs → Dies<br/>
+      Must export telemetry before death!
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.orange} variant="filled" size="lg">
+      <strong>Challenge: Cold starts</strong><br/><br/>
+      First invocation may be slow<br/>
+      Need to track cold vs. warm performance separately
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.purple} variant="filled" size="lg">
+      <strong>Challenge: No persistent collector</strong><br/><br/>
+      Can't run sidecar that outlives function<br/>
+      Must push directly or use extension
+    </Box>
+  </Column>
+</DiagramContainer>
 
 **Metrics to track for serverless:**
 
@@ -261,76 +323,105 @@ graph TD
 
 **OpenTelemetry Lambda Layer:**
 
-```mermaid
-graph TD
-    A["<b>AWS Lambda</b>"]
-    B["OpenTelemetry Lambda Layer<br/>• Auto-instruments common libraries<br/>• Manages span lifecycle<br/>• Flushes on invocation end"]
-    C["Your Function Code<br/>• Runs with tracing enabled<br/>• No code changes needed for basic telemetry"]
-    D[Collector<br/>(dedicated pool)]
-
-    A --> B
-    B --> C
-    C -->|OTLP| D
-
-    style A fill:#f59e0b,color:#fff
-    style B fill:#8b5cf6,color:#fff
-    style C fill:#3b82f6,color:#fff
-    style D fill:#10b981,color:#fff
-```
+<DiagramContainer>
+  <Column gap="md" align="center">
+    <Box color={colors.orange} variant="filled" size="md">
+      <strong>AWS Lambda</strong>
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.purple} variant="filled" size="lg">
+      OpenTelemetry Lambda Layer<br/>
+      • Auto-instruments common libraries<br/>
+      • Manages span lifecycle<br/>
+      • Flushes on invocation end
+    </Box>
+    <Arrow direction="down" />
+    <Box color={colors.blue} variant="filled" size="lg">
+      Your Function Code<br/>
+      • Runs with tracing enabled<br/>
+      • No code changes needed for basic telemetry
+    </Box>
+    <Arrow direction="down" label="OTLP" />
+    <Box color={colors.green} variant="filled" size="md">
+      Collector<br/>
+      (dedicated pool)
+    </Box>
+  </Column>
+</DiagramContainer>
 
 ### 4.3. Queues and Async Workflows
 
 Event-driven architectures present unique challenges:
 
-```mermaid
-graph TD
-    subgraph Traditional["Traditional Request/Response"]
-        U1[User] --> SA1[Service A]
-        SA1 --> SB1[Service B]
-        SB1 --> SC1[Service C]
-        SC1 --> R1[Response]
-    end
+<DiagramContainer>
+  <Row gap="lg" align="start" wrap>
+    <Group title="Traditional Request/Response" color={colors.blue}>
+      <Column gap="sm" align="center">
+        <Box color={colors.blue} variant="filled" size="sm">User</Box>
+        <Arrow direction="down" />
+        <Box color={colors.green} variant="filled" size="sm">Service A</Box>
+        <Arrow direction="down" />
+        <Box color={colors.green} variant="filled" size="sm">Service B</Box>
+        <Arrow direction="down" />
+        <Box color={colors.green} variant="filled" size="sm">Service C</Box>
+        <Arrow direction="down" />
+        <Box color={colors.purple} variant="filled" size="sm">Response</Box>
+      </Column>
+    </Group>
 
-    subgraph Async["Async/Event-Driven"]
-        U2[User] --> SA2[Service A]
-        SA2 --> Q1[Queue]
-        Q1 --> SB2[Service B]
-        Q1 --> SC2[Service C]
-        SC2 --> Q2[Queue]
-        Q2 --> SD2[Service D]
-        SD2 --> SE2[Service E]
-    end
-
-    style U1 fill:#3b82f6,color:#fff
-    style SA1 fill:#10b981,color:#fff
-    style SB1 fill:#10b981,color:#fff
-    style SC1 fill:#10b981,color:#fff
-    style R1 fill:#8b5cf6,color:#fff
-    style U2 fill:#3b82f6,color:#fff
-    style SA2 fill:#10b981,color:#fff
-    style Q1 fill:#f59e0b,color:#fff
-    style SB2 fill:#10b981,color:#fff
-    style SC2 fill:#10b981,color:#fff
-    style Q2 fill:#f59e0b,color:#fff
-    style SD2 fill:#10b981,color:#fff
-    style SE2 fill:#10b981,color:#fff
-```
+    <Group title="Async/Event-Driven" color={colors.orange}>
+      <Column gap="sm" align="center">
+        <Box color={colors.blue} variant="filled" size="sm">User</Box>
+        <Arrow direction="down" />
+        <Box color={colors.green} variant="filled" size="sm">Service A</Box>
+        <Arrow direction="down" />
+        <Box color={colors.orange} variant="filled" size="sm">Queue</Box>
+        <Row gap="sm">
+          <Column gap="sm" align="center">
+            <Arrow direction="down" />
+            <Box color={colors.green} variant="filled" size="sm">Service B</Box>
+          </Column>
+          <Column gap="sm" align="center">
+            <Arrow direction="down" />
+            <Box color={colors.green} variant="filled" size="sm">Service C</Box>
+            <Arrow direction="down" />
+            <Box color={colors.orange} variant="filled" size="sm">Queue</Box>
+            <Arrow direction="down" />
+            <Box color={colors.green} variant="filled" size="sm">Service D</Box>
+            <Arrow direction="down" />
+            <Box color={colors.green} variant="filled" size="sm">Service E</Box>
+          </Column>
+        </Row>
+      </Column>
+    </Group>
+  </Row>
+</DiagramContainer>
 
 **Solution: Span Links**
 
-```mermaid
-graph TD
-    A["<b>Producer (Trace 1)</b><br/><br/>Span: 'publish-message'<br/>trace_id: abc123<br/>span_id: 001<br/><br/>Attaches span context to message headers"]
-    Q[Queue]
-    B["<b>Consumer (Trace 2 - NEW trace!)</b><br/><br/>Span: 'process-message'<br/>trace_id: xyz789 ← Different trace!<br/>span_id: 001<br/>links: [{trace_id: abc123, span_id: 001}] ← Link to producer"]
-
-    A -->|message| Q
-    Q --> B
-
-    style A fill:#3b82f6,color:#fff
-    style Q fill:#f59e0b,color:#fff
-    style B fill:#8b5cf6,color:#fff
-```
+<DiagramContainer>
+  <Row gap="md" align="center">
+    <Box color={colors.blue} variant="filled" size="lg">
+      <strong>Producer (Trace 1)</strong><br/><br/>
+      Span: 'publish-message'<br/>
+      trace_id: abc123<br/>
+      span_id: 001<br/><br/>
+      Attaches span context to message headers
+    </Box>
+    <Arrow direction="right" label="message" />
+    <Box color={colors.orange} variant="filled" size="md">
+      Queue
+    </Box>
+    <Arrow direction="right" />
+    <Box color={colors.purple} variant="filled" size="lg">
+      <strong>Consumer (Trace 2 - NEW trace!)</strong><br/><br/>
+      Span: 'process-message'<br/>
+      trace_id: xyz789 ← Different trace!<br/>
+      span_id: 001<br/>
+      links: [{'{'}trace_id: abc123, span_id: 001{'}'}] ← Link to producer
+    </Box>
+  </Row>
+</DiagramContainer>
 
 **Why separate traces?**
 

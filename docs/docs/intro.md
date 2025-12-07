@@ -5,6 +5,8 @@ description: "Master OpenTelemetry for modern observability - a comprehensive gu
 slug: /
 ---
 
+import { ProcessFlow, colors } from '@site/src/components/diagrams';
+
 # 🎯 OpenTelemetry Guide
 
 > **"History is not the past but a map of the past, drawn from a particular point of view, to be useful to the modern traveler."**
@@ -61,21 +63,13 @@ This guide is designed for:
 
 ## 3. How to Use This Guide
 
-```mermaid
-graph TD
-    A["📖 Part I: Foundations<br/>(Chapters 1-4)"] --> B["Build mental models"]
-    B --> C["🔧 Part II: Implementation<br/>(Chapters 5-7)"]
-    C --> D["Get hands-on experience"]
-    D --> E["🚀 Part III: Operations<br/>(Chapters 8-9)"]
-    E --> F["Scale your practice"]
-
-    style A fill:#3b82f6,color:#fff
-    style B fill:#3b82f6,color:#fff
-    style C fill:#8b5cf6,color:#fff
-    style D fill:#8b5cf6,color:#fff
-    style E fill:#10b981,color:#fff
-    style F fill:#10b981,color:#fff
-```
+<ProcessFlow
+  steps={[
+    { title: "Part I: Foundations", description: "Chapters 1-4: Build mental models", icon: "📖", color: colors.blue },
+    { title: "Part II: Implementation", description: "Chapters 5-7: Get hands-on experience", icon: "🔧", color: colors.purple },
+    { title: "Part III: Operations", description: "Chapters 8-9: Scale your practice", icon: "🚀", color: colors.green }
+  ]}
+/>
 
 **If you're new to OpenTelemetry:** Start with Part I (Foundations) to build a solid mental model before diving into implementation.
 

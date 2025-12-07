@@ -107,18 +107,12 @@ Simple concept → Intermediate application → Advanced implementation
 
 ### Diagrams
 
-**Docusaurus:** Use SVG, React components, or Mermaid
+**Docusaurus:** Use SVG or React components (no Mermaid)
 
 ```jsx
 // React component
 import FlowDiagram from '@site/src/components/FlowDiagram';
 <FlowDiagram steps={['Input', 'Process', 'Output']} />
-
-// Mermaid
-```mermaid
-graph LR
-    A[Step 1] --> B[Step 2] --> C[Step 3]
-```
 ```
 
 **Plain Markdown:** Use ASCII
@@ -155,11 +149,6 @@ Use strategically for visual hierarchy:
 | **Red** | `#ef4444` | Error, danger, negative |
 | **Slate** | `#64748b` | Neutral, borders, muted text |
 
-**Mermaid diagram styling:**
-```
-style NodeName fill:#3b82f6,color:#fff
-```
-
 ### Prefer SVG/React Over ASCII
 
 | Feature | ASCII | SVG/React |
@@ -181,12 +170,6 @@ style NodeName fill:#3b82f6,color:#fff
 // Option 2: Custom React component
 import FlowDiagram from '@site/src/components/FlowDiagram';
 <FlowDiagram steps={['Input', 'Process', 'Output']} />
-
-// Option 3: Mermaid (requires plugin)
-```mermaid
-graph LR
-    A[Step 1] --> B[Step 2] --> C[Step 3]
-```
 ```
 
 ### Interactive Code Blocks
