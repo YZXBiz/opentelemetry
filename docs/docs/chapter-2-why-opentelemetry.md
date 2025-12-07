@@ -4,6 +4,8 @@ title: "Chapter 2: Why Use OpenTelemetry?"
 description: "Understanding the challenges of production monitoring and why OpenTelemetry is the solution for modern observability"
 ---
 
+import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@site/src/components/diagrams';
+
 # 🎯 Chapter 2: Why Use OpenTelemetry?
 
 > **"A map is not the actual territory, but if correctly made, it has a similar structure to the territory and therefore is useful."**
@@ -41,24 +43,27 @@ description: "Understanding the challenges of production monitoring and why Open
 
 Most organizations have accumulated a patchwork of monitoring tools over time:
 
-```
-Typical Enterprise Monitoring Stack
-───────────────────────────────────
+```mermaid
+graph TD
+    APM["APM Tool<br/>(Vendor A)"]
+    LOG["Log Tool<br/>(Vendor B)"]
+    MET["Metrics Tool<br/>(Vendor C)"]
+    AGENT1["Proprietary<br/>Agent"]
+    AGENT2["Proprietary<br/>Agent"]
+    AGENT3["Proprietary<br/>Agent"]
+    APP["Your Services"]
 
-┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-│   APM Tool  │  │  Log Tool   │  │Metrics Tool │
-│  (Vendor A) │  │ (Vendor B)  │  │ (Vendor C)  │
-└──────┬──────┘  └──────┬──────┘  └──────┬──────┘
-       │                │                │
-       ▼                ▼                ▼
-   Proprietary      Proprietary     Proprietary
-     Agent            Agent           Agent
-       │                │                │
-       └────────────────┼────────────────┘
-                        ▼
-              ┌─────────────────┐
-              │  Your Services  │
-              └─────────────────┘
+    APM --> AGENT1
+    LOG --> AGENT2
+    MET --> AGENT3
+    AGENT1 --> APP
+    AGENT2 --> APP
+    AGENT3 --> APP
+
+    style APM fill:#3b82f6,color:#fff
+    style LOG fill:#8b5cf6,color:#fff
+    style MET fill:#10b981,color:#fff
+    style APP fill:#f59e0b,color:#fff
 ```
 
 **Problems with this approach:**
@@ -80,14 +85,26 @@ Typical Enterprise Monitoring Stack
 
 Production problems are fundamentally different from development bugs:
 
-```
-Development Environment          Production Environment
-───────────────────────         ─────────────────────────
-• Single request at a time      • Thousands of concurrent requests
-• Consistent state              • Constantly changing state
-• Can add breakpoints           • Can only observe
-• Full access to system         • Distributed across services
-• Reproducible issues           • Intermittent, timing-dependent
+```mermaid
+graph LR
+    subgraph DEV["Development Environment"]
+        D1["Single request at a time"]
+        D2["Consistent state"]
+        D3["Can add breakpoints"]
+        D4["Full access to system"]
+        D5["Reproducible issues"]
+    end
+
+    subgraph PROD["Production Environment"]
+        P1["Thousands of concurrent requests"]
+        P2["Constantly changing state"]
+        P3["Can only observe"]
+        P4["Distributed across services"]
+        P5["Intermittent, timing-dependent"]
+    end
+
+    style DEV fill:#10b981,color:#fff
+    style PROD fill:#ef4444,color:#fff
 ```
 
 ### Why Production Debugging Is Hard
@@ -122,19 +139,24 @@ Without correlated telemetry, each question requires searching through different
 | **Hard Context** | Explicit identifiers linking data | Trace ID, Span ID | 100% accurate |
 | **Soft Context** | Shared attributes that suggest relation | Timestamp, service name | Requires inference |
 
-```
-Hard Context Example
-────────────────────
-Log Entry → trace_id: abc123 → Trace → trace_id: abc123 → Spans
-                   ↑
-            Direct link, guaranteed to match
+```mermaid
+graph LR
+    subgraph HARD["Hard Context Example"]
+        LOG1["Log Entry<br/>trace_id: abc123"] --> TRACE1["Trace<br/>trace_id: abc123"]
+        TRACE1 --> SPAN1["Spans"]
+    end
 
-Soft Context Example
-────────────────────
-Log Entry → timestamp: 14:32:05
-Metric    → timestamp: 14:32:00
-                   ↑
-            "Probably" related, might not be
+    subgraph SOFT["Soft Context Example"]
+        LOG2["Log Entry<br/>timestamp: 14:32:05"]
+        METRIC2["Metric<br/>timestamp: 14:32:00"]
+        LOG2 -.->|"Probably related"| METRIC2
+    end
+
+    style HARD fill:#10b981,color:#fff
+    style SOFT fill:#f59e0b,color:#fff
+    style LOG1 fill:#3b82f6,color:#fff
+    style TRACE1 fill:#3b82f6,color:#fff
+    style SPAN1 fill:#3b82f6,color:#fff
 ```
 
 > **💡 Insight**
@@ -145,19 +167,21 @@ Metric    → timestamp: 14:32:00
 
 Telemetry works best in layers, each adding more detail:
 
-```
-Telemetry Layers (from general to specific)
-──────────────────────────────────────────
+```mermaid
+graph TD
+    L4["Layer 4: Individual Events (Logs)<br/>Connection to DB failed"]
+    L3["Layer 3: Request Flow (Traces)<br/>Request took 500ms"]
+    L2["Layer 2: Aggregated Measurements<br/>P99 latency is 200ms"]
+    L1["Layer 1: System Health (Metrics)<br/>CPU at 80%"]
 
-┌─────────────────────────────────────────┐
-│  Layer 4: Individual Events (Logs)      │ ← "Connection to DB failed"
-├─────────────────────────────────────────┤
-│  Layer 3: Request Flow (Traces)         │ ← "Request took 500ms"
-├─────────────────────────────────────────┤
-│  Layer 2: Aggregated Measurements       │ ← "P99 latency is 200ms"
-├─────────────────────────────────────────┤
-│  Layer 1: System Health (Metrics)       │ ← "CPU at 80%"
-└─────────────────────────────────────────┘
+    L4 --> L3
+    L3 --> L2
+    L2 --> L1
+
+    style L4 fill:#8b5cf6,color:#fff
+    style L3 fill:#3b82f6,color:#fff
+    style L2 fill:#10b981,color:#fff
+    style L1 fill:#f59e0b,color:#fff
 ```
 
 **How layers work together:**
@@ -172,18 +196,22 @@ Telemetry Layers (from general to specific)
 
 **In technical terms:** Semantic conventions are standardized attribute names and values that ensure telemetry from different sources can be correlated and analyzed together.
 
-```
-Without Semantic Conventions
-────────────────────────────
-Service A: {method: "GET", path: "/users"}
-Service B: {http_method: "get", url: "/users"}
-Service C: {request_type: "GET", endpoint: "/users"}
+```mermaid
+graph TD
+    subgraph WITHOUT["Without Semantic Conventions"]
+        A1["Service A:<br/>{method: GET, path: /users}"]
+        A2["Service B:<br/>{http_method: get, url: /users}"]
+        A3["Service C:<br/>{request_type: GET, endpoint: /users}"]
+    end
 
-With OpenTelemetry Semantic Conventions
-───────────────────────────────────────
-Service A: {http.request.method: "GET", url.path: "/users"}
-Service B: {http.request.method: "GET", url.path: "/users"}
-Service C: {http.request.method: "GET", url.path: "/users"}
+    subgraph WITH["With OpenTelemetry Semantic Conventions"]
+        B1["Service A:<br/>{http.request.method: GET, url.path: /users}"]
+        B2["Service B:<br/>{http.request.method: GET, url.path: /users}"]
+        B3["Service C:<br/>{http.request.method: GET, url.path: /users}"]
+    end
+
+    style WITHOUT fill:#ef4444,color:#fff
+    style WITH fill:#10b981,color:#fff
 ```
 
 > **💡 Insight**
@@ -213,31 +241,24 @@ OpenTelemetry addresses every challenge we've discussed:
 
 ### 🔧 Architecture That Solves Real Problems
 
-```
-OpenTelemetry Architecture
-──────────────────────────
+```mermaid
+graph TD
+    APP["Your Application<br/>OpenTelemetry SDK (single library)<br/>Traces • Metrics • Logs • Context Prop."]
+    COL["OpenTelemetry Collector<br/>(transform, filter, route)"]
+    T1["Tool A<br/>(any vendor)"]
+    T2["Tool B<br/>(any vendor)"]
+    T3["Tool C<br/>(self-hosted)"]
 
-┌─────────────────────────────────────────────────────────┐
-│                    Your Application                      │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │           OpenTelemetry SDK (single library)      │   │
-│  │   • Traces  • Metrics  • Logs  • Context Prop.   │   │
-│  └──────────────────────────────────────────────────┘   │
-└───────────────────────────┬─────────────────────────────┘
-                            │ OTLP (standard protocol)
-                            ▼
-              ┌─────────────────────────────┐
-              │    OpenTelemetry Collector   │
-              │   (transform, filter, route) │
-              └──────────────┬──────────────┘
-                             │
-         ┌───────────────────┼───────────────────┐
-         ▼                   ▼                   ▼
-    ┌─────────┐        ┌─────────┐        ┌─────────┐
-    │ Tool A  │        │ Tool B  │        │ Tool C  │
-    │(any     │        │(any     │        │(self-   │
-    │ vendor) │        │ vendor) │        │ hosted) │
-    └─────────┘        └─────────┘        └─────────┘
+    APP -->|"OTLP (standard protocol)"| COL
+    COL --> T1
+    COL --> T2
+    COL --> T3
+
+    style APP fill:#3b82f6,color:#fff
+    style COL fill:#8b5cf6,color:#fff
+    style T1 fill:#10b981,color:#fff
+    style T2 fill:#10b981,color:#fff
+    style T3 fill:#10b981,color:#fff
 ```
 
 ### ✅ How OpenTelemetry Solves Each Problem

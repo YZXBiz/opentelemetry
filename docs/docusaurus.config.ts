@@ -11,6 +11,12 @@ const config: Config = {
     v4: true,
   },
 
+  // Enable Mermaid diagrams
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid', '@docusaurus/theme-live-codeblock'],
+
   // GitHub Pages deployment configuration
   url: 'https://YZXBiz.github.io',
   baseUrl: '/opentelemetry/',
@@ -20,7 +26,6 @@ const config: Config = {
   trailingSlash: false,
 
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
 
   i18n: {
     defaultLocale: 'en',

@@ -4,6 +4,8 @@ title: "Chapter 1: The State of Modern Observability"
 description: "Understanding distributed systems, telemetry fundamentals, and the evolution from three pillars to a single braid of observability data"
 ---
 
+import { FlowDiagram, ComparisonDiagram, LayerDiagram } from '@site/src/components/diagrams';
+
 # 🎯 Chapter 1: The State of Modern Observability
 
 > **"History is not the past but a map of the past, drawn from a particular point of view, to be useful to the modern traveler."**
@@ -45,17 +47,21 @@ Before we dive into OpenTelemetry specifically, let's establish a shared vocabul
 
 Modern applications aren't monoliths running on a single server. They're **distributed systems**—collections of independent services communicating over networks.
 
-```
-Traditional Monolith              Distributed System
-─────────────────────            ────────────────────
-┌─────────────────┐              ┌─────┐  ┌─────┐  ┌─────┐
-│                 │              │ Svc │──│ Svc │──│ Svc │
-│   Single App    │      →       │  A  │  │  B  │  │  C  │
-│                 │              └──┬──┘  └──┬──┘  └──┬──┘
-└─────────────────┘                 │        │        │
-                                 ┌──┴────────┴────────┴──┐
-                                 │      Database(s)       │
-                                 └────────────────────────┘
+```mermaid
+graph LR
+    subgraph "Traditional Monolith"
+        A[Single Application]
+    end
+
+    subgraph "Distributed System"
+        B[Service A] --> C[Service B]
+        C --> D[Service C]
+        B --> E[(Database)]
+        C --> E
+        D --> E
+    end
+
+    A -.->|evolves to| B
 ```
 
 > **💡 Insight**
@@ -75,14 +81,18 @@ Understanding observability requires distinguishing between two fundamental conc
 
 **Transaction observability** answers: "Is my application working correctly for users?"
 
-```
-Resource View                    Transaction View
-────────────────                 ─────────────────
-CPU: 45%                         Request: GET /api/users
-Memory: 2.1GB                    Duration: 234ms
-Disk I/O: 12MB/s                 Status: 200 OK
-Network: 100Mbps                 User: customer_123
-```
+<ComparisonDiagram
+  left={{
+    title: "Resource View",
+    items: ["CPU: 45%", "Memory: 2.1GB", "Disk I/O: 12MB/s", "Network: 100Mbps"],
+    color: "#3b82f6"
+  }}
+  right={{
+    title: "Transaction View",
+    items: ["Request: GET /api/users", "Duration: 234ms", "Status: 200 OK", "User: customer_123"],
+    color: "#10b981"
+  }}
+/>
 
 > **💡 Insight**
 >
@@ -106,18 +116,20 @@ There are three primary types of telemetry data:
 | **Metrics** | Numerical measurements over time | Alerting, dashboards, trends |
 | **Traces** | Request flow across services | Understanding distributed transactions |
 
-```
-                    ┌─────────────────────────────────────┐
-                    │           Telemetry Types           │
-                    └─────────────────────────────────────┘
-                                      │
-            ┌─────────────────────────┼─────────────────────────┐
-            ▼                         ▼                         ▼
-      ┌─────────┐              ┌─────────┐              ┌─────────┐
-      │  Logs   │              │ Metrics │              │ Traces  │
-      └────┬────┘              └────┬────┘              └────┬────┘
-           │                        │                        │
-    "What happened"         "How much/many"         "How it flowed"
+```mermaid
+graph TD
+    T[Telemetry Types] --> L[Logs]
+    T --> M[Metrics]
+    T --> R[Traces]
+
+    L --> L1["What happened"]
+    M --> M1["How much/many"]
+    R --> R1["How it flowed"]
+
+    style T fill:#3b82f6,color:#fff
+    style L fill:#8b5cf6,color:#fff
+    style M fill:#10b981,color:#fff
+    style R fill:#f59e0b,color:#fff
 ```
 
 ### 3.2. Telemetry Attributes
@@ -149,21 +161,21 @@ Raw telemetry data isn't very useful without **context**. Attributes add meaning
 
 For years, the industry talked about the "three pillars of observability"—logs, metrics, and traces. But this framing created problems:
 
-```
-The "Three Pillars" Model
-─────────────────────────
+```mermaid
+graph TD
+    subgraph "The Three Pillars Model"
+        L[Logs] --> LA[Tool A]
+        M[Metrics] --> MB[Tool B]
+        T[Traces] --> TC[Tool C]
 
-    Logs          Metrics         Traces
-      │              │               │
-      ▼              ▼               ▼
-  ┌───────┐     ┌───────┐      ┌───────┐
-  │ Tool  │     │ Tool  │      │ Tool  │
-  │   A   │     │   B   │      │   C   │
-  └───────┘     └───────┘      └───────┘
-      │              │               │
-      ▼              ▼               ▼
-  Separate      Separate       Separate
-  Storage       Storage        Storage
+        LA --> SA[(Storage A)]
+        MB --> SB[(Storage B)]
+        TC --> SC[(Storage C)]
+    end
+
+    style L fill:#8b5cf6,color:#fff
+    style M fill:#10b981,color:#fff
+    style T fill:#f59e0b,color:#fff
 ```
 
 **The problems with this model:**
@@ -183,15 +195,15 @@ The "Three Pillars" Model
 
 OpenTelemetry introduces a better mental model: instead of three separate pillars, think of telemetry as a **single braid** of interconnected data.
 
-```
-The "Single Braid" Model
-────────────────────────
+```mermaid
+graph LR
+    L[Logs] --> U[Unified Telemetry]
+    M[Metrics] --> U
+    T[Traces] --> U
+    U --> C[Correlated Analysis]
 
-    Logs ───┐
-            │
-  Metrics ──┼──▶  Unified Telemetry  ──▶  Correlated Analysis
-            │     (shared context)
-   Traces ──┘
+    style U fill:#3b82f6,color:#fff
+    style C fill:#10b981,color:#fff
 ```
 
 **What makes this work:**
@@ -203,21 +215,29 @@ The "Single Braid" Model
 | **Semantic conventions** | Standard names for common concepts |
 | **Correlation** | Jump from a metric to related traces to specific logs |
 
-```
-Before: Investigating an issue
-──────────────────────────────
-1. See metric spike in Tool A
-2. Manually search logs in Tool B
-3. Guess which trace might be related in Tool C
-4. Repeat until you find something
-
-After: With correlated telemetry
-────────────────────────────────
-1. See metric spike
-2. Click to see related traces
-3. Click to see logs for that trace
-4. Understand the problem
-```
+<ComparisonDiagram
+  left={{
+    title: "Before: Investigating",
+    items: [
+      "1. See metric spike in Tool A",
+      "2. Search logs in Tool B",
+      "3. Guess traces in Tool C",
+      "4. Repeat until found"
+    ],
+    color: "#ef4444"
+  }}
+  right={{
+    title: "After: Correlated",
+    items: [
+      "1. See metric spike",
+      "2. Click to see traces",
+      "3. Click to see logs",
+      "4. Understand problem"
+    ],
+    color: "#10b981"
+  }}
+  centerLabel="vs"
+/>
 
 > **💡 Insight**
 >

@@ -4,6 +4,8 @@ title: "Chapter 4: The OpenTelemetry Architecture"
 description: "Understanding the API, SDK, Collector architecture and hands-on demo exploration"
 ---
 
+import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram, ArchitectureDiagram } from '@site/src/components/diagrams';
+
 # 🏗️ Chapter 4: The OpenTelemetry Architecture
 
 > **"I have always found that plans are useless, but planning is indispensable."**
@@ -44,40 +46,23 @@ description: "Understanding the API, SDK, Collector architecture and hands-on de
 
 Application telemetry comes from code running in your services. Here's how the pieces fit together:
 
-```
-Application Telemetry Architecture
-──────────────────────────────────
+```mermaid
+graph TD
+    subgraph App["Your Application"]
+        Libs["Instrumented Libraries<br/>(HTTP client, database driver, framework, etc.)<br/>Uses API calls"]
+        API["OpenTelemetry API<br/>• Tracer, Meter, Logger interfaces<br/>• Zero dependencies, minimal overhead"]
+        SDK["OpenTelemetry SDK<br/>• TracerProvider, MeterProvider, LoggerProvider<br/>• Samplers, Processors, Exporters"]
 
-┌─────────────────────────────────────────────────────────────────┐
-│                     Your Application                            │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │              Instrumented Libraries                      │   │
-│  │  (HTTP client, database driver, framework, etc.)        │   │
-│  │              Uses ↓ API ↓ calls                         │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                              ↓                                  │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │              OpenTelemetry API                           │   │
-│  │  • Tracer, Meter, Logger interfaces                     │   │
-│  │  • Zero dependencies, minimal overhead                  │   │
-│  │              Backed by ↓ SDK ↓                          │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                              ↓                                  │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │              OpenTelemetry SDK                           │   │
-│  │  • TracerProvider, MeterProvider, LoggerProvider        │   │
-│  │  • Samplers, Processors, Exporters                      │   │
-│  │              Exports to ↓ Collector ↓                   │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-                               │
-                               │ OTLP
-                               ▼
-                    ┌─────────────────────┐
-                    │     Collector       │
-                    └─────────────────────┘
+        Libs -->|API calls| API
+        API -->|Backed by SDK| SDK
+    end
+
+    SDK -->|OTLP| Collector["Collector"]
+
+    style Libs fill:#3b82f6,color:#fff
+    style API fill:#8b5cf6,color:#fff
+    style SDK fill:#10b981,color:#fff
+    style Collector fill:#f59e0b,color:#fff
 ```
 
 ### 2.1. Library Instrumentation
@@ -86,26 +71,15 @@ Application Telemetry Architecture
 
 **In technical terms:** Instrumentation libraries wrap or hook into existing libraries to automatically emit telemetry.
 
-```
-Types of Instrumentation
-────────────────────────
+```mermaid
+graph TD
+    Native["Native Instrumentation<br/>• Built into the library itself<br/>• Best performance and accuracy<br/>• Example: A database driver with built-in tracing"]
+    InstLib["Instrumentation Libraries<br/>• Wraps existing libraries<br/>• Added separately from the library<br/>• Example: opentelemetry-instrumentation-http"]
+    Auto["Auto-Instrumentation (Agents)<br/>• Automatically instruments many libraries at once<br/>• Language-specific (Java agent, Python auto-instrumentation)<br/>• Quickest to set up, less customization"]
 
-┌─────────────────────────────────────────────────────────────┐
-│ Native Instrumentation                                      │
-│ • Built into the library itself                            │
-│ • Best performance and accuracy                            │
-│ • Example: A database driver with built-in tracing         │
-├─────────────────────────────────────────────────────────────┤
-│ Instrumentation Libraries                                   │
-│ • Wraps existing libraries                                 │
-│ • Added separately from the library                        │
-│ • Example: opentelemetry-instrumentation-http              │
-├─────────────────────────────────────────────────────────────┤
-│ Auto-Instrumentation (Agents)                              │
-│ • Automatically instruments many libraries at once         │
-│ • Language-specific (Java agent, Python auto-instrumentation)│
-│ • Quickest to set up, less customization                   │
-└─────────────────────────────────────────────────────────────┘
+    style Native fill:#10b981,color:#fff
+    style InstLib fill:#3b82f6,color:#fff
+    style Auto fill:#8b5cf6,color:#fff
 ```
 
 > **💡 Insight**
@@ -118,27 +92,18 @@ Types of Instrumentation
 
 **In technical terms:** The API provides interfaces for creating telemetry, with no actual implementation. It's safe to depend on from libraries.
 
-```
-API Characteristics
-───────────────────
+```mermaid
+graph TD
+    subgraph API["API Package"]
+        Interfaces["Defines interfaces only (Tracer, Meter, Logger)<br/>• Zero or minimal dependencies<br/>• No-op by default (does nothing until SDK is registered)<br/>• Safe for library authors to depend on<br/>• Stable: backward-compatible forever"]
+        Example["Example API usage:<br/>tracer = getTracer('my-service')<br/>span = tracer.startSpan('process-order')<br/>span.setAttribute('order.id', orderId)<br/>span.end()"]
 
-┌─────────────────────────────────────────────────────────────┐
-│ API Package                                                 │
-│                                                             │
-│ • Defines interfaces only (Tracer, Meter, Logger)          │
-│ • Zero or minimal dependencies                             │
-│ • No-op by default (does nothing until SDK is registered)  │
-│ • Safe for library authors to depend on                    │
-│ • Stable: backward-compatible forever                      │
-│                                                             │
-│ ┌─────────────────────────────────────────────────────┐   │
-│ │ // Example API usage                                 │   │
-│ │ tracer = getTracer("my-service")                    │   │
-│ │ span = tracer.startSpan("process-order")            │   │
-│ │ span.setAttribute("order.id", orderId)              │   │
-│ │ span.end()                                           │   │
-│ └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+        Interfaces --> Example
+    end
+
+    style API fill:#8b5cf6,color:#fff
+    style Interfaces fill:#3b82f6,color:#fff
+    style Example fill:#10b981,color:#fff
 ```
 
 **Why separate API from SDK?**
@@ -156,44 +121,27 @@ API Characteristics
 
 **In technical terms:** The SDK implements the API interfaces and provides the machinery for collecting and exporting telemetry.
 
-```
-SDK Components
-──────────────
+```mermaid
+graph TD
+    subgraph SDK["SDK"]
+        Providers["Providers (TracerProvider, MeterProvider, etc.)<br/>• Create and manage Tracers/Meters/Loggers<br/>• Hold configuration and state"]
+        Resource["Resource<br/>• Describes the entity producing telemetry<br/>• service.name, host.name, k8s.pod.name, etc."]
+        Samplers["Samplers<br/>• Decide which traces to record<br/>• AlwaysOn, AlwaysOff, TraceIdRatioBased, etc."]
+        Processors["Processors<br/>• Process data before export<br/>• BatchProcessor (batches for efficiency)<br/>• SimpleProcessor (immediate export)"]
+        Exporters["Exporters<br/>• Send data to backends<br/>• OTLP, Jaeger, Prometheus, Console, etc."]
 
-┌─────────────────────────────────────────────────────────────┐
-│                         SDK                                  │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ Providers (TracerProvider, MeterProvider, etc.)     │   │
-│  │ • Create and manage Tracers/Meters/Loggers          │   │
-│  │ • Hold configuration and state                      │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           ↓                                  │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ Resource                                             │   │
-│  │ • Describes the entity producing telemetry          │   │
-│  │ • service.name, host.name, k8s.pod.name, etc.      │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           ↓                                  │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ Samplers                                             │   │
-│  │ • Decide which traces to record                     │   │
-│  │ • AlwaysOn, AlwaysOff, TraceIdRatioBased, etc.     │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           ↓                                  │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ Processors                                           │   │
-│  │ • Process data before export                        │   │
-│  │ • BatchProcessor (batches for efficiency)           │   │
-│  │ • SimpleProcessor (immediate export)                │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           ↓                                  │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ Exporters                                            │   │
-│  │ • Send data to backends                             │   │
-│  │ • OTLP, Jaeger, Prometheus, Console, etc.          │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+        Providers --> Resource
+        Resource --> Samplers
+        Samplers --> Processors
+        Processors --> Exporters
+    end
+
+    style SDK fill:#3b82f6,color:#fff
+    style Providers fill:#8b5cf6,color:#fff
+    style Resource fill:#10b981,color:#fff
+    style Samplers fill:#f59e0b,color:#fff
+    style Processors fill:#3b82f6,color:#fff
+    style Exporters fill:#10b981,color:#fff
 ```
 
 ---
@@ -202,27 +150,17 @@ SDK Components
 
 Not all telemetry comes from application code. Infrastructure telemetry captures:
 
-```
-Infrastructure Telemetry Sources
-────────────────────────────────
+```mermaid
+graph TD
+    Host["Host Metrics<br/>• CPU, memory, disk, network<br/>• Collected by Collector's hostmetrics receiver"]
+    Container["Container Metrics<br/>• Docker/containerd stats<br/>• Resource limits and usage"]
+    K8s["Kubernetes Metrics<br/>• Pod, node, cluster metrics<br/>• Events and object states"]
+    Cloud["Cloud Provider Metrics<br/>• AWS CloudWatch, Azure Monitor, GCP Cloud Monitoring<br/>• Managed service metrics"]
 
-┌─────────────────────────────────────────────────────────────┐
-│ Host Metrics                                                │
-│ • CPU, memory, disk, network                               │
-│ • Collected by Collector's hostmetrics receiver            │
-├─────────────────────────────────────────────────────────────┤
-│ Container Metrics                                          │
-│ • Docker/containerd stats                                  │
-│ • Resource limits and usage                                │
-├─────────────────────────────────────────────────────────────┤
-│ Kubernetes Metrics                                         │
-│ • Pod, node, cluster metrics                              │
-│ • Events and object states                                 │
-├─────────────────────────────────────────────────────────────┤
-│ Cloud Provider Metrics                                     │
-│ • AWS CloudWatch, Azure Monitor, GCP Cloud Monitoring     │
-│ • Managed service metrics                                  │
-└─────────────────────────────────────────────────────────────┘
+    style Host fill:#3b82f6,color:#fff
+    style Container fill:#8b5cf6,color:#fff
+    style K8s fill:#10b981,color:#fff
+    style Cloud fill:#f59e0b,color:#fff
 ```
 
 > **💡 Insight**
@@ -235,26 +173,27 @@ Infrastructure Telemetry Sources
 
 A telemetry pipeline connects sources to destinations:
 
-```
-Telemetry Pipeline Stages
-─────────────────────────
+```mermaid
+graph LR
+    App1["App 1"]
+    App2["App 2"]
+    Infra["Infra"]
+    Collection["Collection<br/>• Receive data<br/>• Parse formats<br/>• Validate"]
+    Processing["Processing<br/>• Transform<br/>• Filter<br/>• Sample<br/>• Enrich"]
+    Backend["Backend<br/>or<br/>Storage"]
 
-Source → Collection → Processing → Export → Storage → Analysis
+    App1 --> Collection
+    App2 --> Collection
+    Infra --> Collection
+    Collection --> Processing
+    Processing --> Backend
 
-┌────────┐   ┌────────────┐   ┌────────────┐   ┌─────────┐
-│ App 1  │──▶│            │   │            │   │         │
-├────────┤   │            │   │            │   │ Backend │
-│ App 2  │──▶│ Collection │──▶│ Processing │──▶│   or    │
-├────────┤   │            │   │            │   │ Storage │
-│ Infra  │──▶│            │   │            │   │         │
-└────────┘   └────────────┘   └────────────┘   └─────────┘
-
-                  │                  │
-                  ▼                  ▼
-            • Receive data     • Transform
-            • Parse formats    • Filter
-            • Validate         • Sample
-                               • Enrich
+    style App1 fill:#3b82f6,color:#fff
+    style App2 fill:#3b82f6,color:#fff
+    style Infra fill:#8b5cf6,color:#fff
+    style Collection fill:#10b981,color:#fff
+    style Processing fill:#f59e0b,color:#fff
+    style Backend fill:#3b82f6,color:#fff
 ```
 
 ---
@@ -265,22 +204,29 @@ Source → Collection → Processing → Export → Storage → Analysis
 
 **In technical terms:** The OpenTelemetry Collector is a vendor-agnostic proxy that receives, processes, and exports telemetry data.
 
-```
-Collector Architecture
-──────────────────────
+```mermaid
+graph LR
+    Incoming["Incoming<br/>Data"]
 
-           ┌───────────────────────────────────────────────────┐
-           │                    Collector                       │
-           │                                                    │
-Incoming   │   ┌───────────┐   ┌───────────┐   ┌───────────┐   │   Outgoing
-─────────▶ │   │ Receivers │──▶│Processors │──▶│ Exporters │   │ ─────────▶
-   Data    │   └───────────┘   └───────────┘   └───────────┘   │   Data
-           │                                                    │
-           │   OTLP, Jaeger,    Batch, Filter,  OTLP, Jaeger,  │
-           │   Prometheus,      Transform,      Prometheus,    │
-           │   Zipkin, etc.     Sample, etc.    Logging, etc.  │
-           │                                                    │
-           └───────────────────────────────────────────────────┘
+    subgraph Collector["Collector"]
+        Receivers["Receivers<br/>OTLP, Jaeger,<br/>Prometheus,<br/>Zipkin, etc."]
+        Processors["Processors<br/>Batch, Filter,<br/>Transform,<br/>Sample, etc."]
+        Exporters["Exporters<br/>OTLP, Jaeger,<br/>Prometheus,<br/>Logging, etc."]
+
+        Receivers --> Processors
+        Processors --> Exporters
+    end
+
+    Outgoing["Outgoing<br/>Data"]
+
+    Incoming --> Receivers
+    Exporters --> Outgoing
+
+    style Incoming fill:#3b82f6,color:#fff
+    style Receivers fill:#10b981,color:#fff
+    style Processors fill:#f59e0b,color:#fff
+    style Exporters fill:#8b5cf6,color:#fff
+    style Outgoing fill:#3b82f6,color:#fff
 ```
 
 ### 5.1. Receivers
@@ -358,49 +304,43 @@ service:
 
 Here's how all components interact in a typical deployment:
 
-```
-Complete OpenTelemetry Deployment
-─────────────────────────────────
+```mermaid
+graph TD
+    subgraph Pod1["Pod 1"]
+        subgraph Service["Your Service"]
+            Code["Your Code<br/>+ Manual Spans"]
+            AutoInst["Auto-Instrument<br/>(HTTP, DB...)"]
+            Code --> SDK1
+            AutoInst --> SDK1
+            SDK1["OTel SDK<br/>(in-process)"]
+        end
 
-┌───────────────────────────────────────────────────────────────┐
-│                          Pod 1                                 │
-│  ┌─────────────────────────────────────────────────────────┐  │
-│  │ Your Service                                             │  │
-│  │ ┌─────────────────┐  ┌─────────────────┐                │  │
-│  │ │   Your Code     │  │ Auto-Instrument │                │  │
-│  │ │  + Manual Spans │  │  (HTTP, DB...)  │                │  │
-│  │ └────────┬────────┘  └────────┬────────┘                │  │
-│  │          └───────────┬────────┘                          │  │
-│  │                      ▼                                    │  │
-│  │              ┌───────────────┐                           │  │
-│  │              │ OTel SDK      │                           │  │
-│  │              │ (in-process)  │                           │  │
-│  │              └───────┬───────┘                           │  │
-│  └──────────────────────┼──────────────────────────────────┘  │
-│                         │ OTLP (localhost)                     │
-│  ┌──────────────────────▼──────────────────────────────────┐  │
-│  │ Collector Sidecar                                        │  │
-│  │ • Receives from service                                  │  │
-│  │ • Adds k8s attributes                                   │  │
-│  │ • Batches and forwards                                  │  │
-│  └──────────────────────┬──────────────────────────────────┘  │
-└─────────────────────────┼─────────────────────────────────────┘
-                          │ OTLP
-                          ▼
-              ┌───────────────────────┐
-              │  Collector Gateway    │
-              │  (shared pool)        │
-              │  • Sampling           │
-              │  • Filtering          │
-              │  • Routing            │
-              └───────────┬───────────┘
-                          │
-          ┌───────────────┼───────────────┐
-          ▼               ▼               ▼
-     ┌─────────┐    ┌─────────┐    ┌─────────┐
-     │ Jaeger  │    │Prometheus│   │ Logging │
-     │(Traces) │    │(Metrics) │   │ Backend │
-     └─────────┘    └─────────┘    └─────────┘
+        Sidecar["Collector Sidecar<br/>• Receives from service<br/>• Adds k8s attributes<br/>• Batches and forwards"]
+
+        SDK1 -->|OTLP localhost| Sidecar
+    end
+
+    Gateway["Collector Gateway<br/>(shared pool)<br/>• Sampling<br/>• Filtering<br/>• Routing"]
+
+    Jaeger["Jaeger<br/>(Traces)"]
+    Prometheus["Prometheus<br/>(Metrics)"]
+    Logging["Logging<br/>Backend"]
+
+    Sidecar -->|OTLP| Gateway
+    Gateway --> Jaeger
+    Gateway --> Prometheus
+    Gateway --> Logging
+
+    style Pod1 fill:#3b82f6,color:#fff
+    style Service fill:#8b5cf6,color:#fff
+    style Code fill:#10b981,color:#fff
+    style AutoInst fill:#10b981,color:#fff
+    style SDK1 fill:#f59e0b,color:#fff
+    style Sidecar fill:#3b82f6,color:#fff
+    style Gateway fill:#8b5cf6,color:#fff
+    style Jaeger fill:#10b981,color:#fff
+    style Prometheus fill:#10b981,color:#fff
+    style Logging fill:#10b981,color:#fff
 ```
 
 ---

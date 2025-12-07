@@ -4,6 +4,8 @@ title: "Chapter 9: Rolling Out Observability"
 description: "Organizational strategies for adopting OpenTelemetry - deep vs wide, code vs collection, and future trends"
 ---
 
+import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@site/src/components/diagrams';
+
 # 🚀 Chapter 9: Rolling Out Observability
 
 > **"Just because the standard provides a cliff in front of you, you are not necessarily required to jump off it."**
@@ -42,18 +44,18 @@ description: "Organizational strategies for adopting OpenTelemetry - deep vs wid
 
 Every rollout decision falls along one of three axes:
 
-```
-The Three Axes
-──────────────
+```mermaid
+graph LR
+    A["Deep<br/>(one service in detail)"] ---|"←─────────────────→"| B["Wide<br/>(many services, basic telemetry)"]
+    C["Code<br/>(SDK instrumentation)"] ---|"←─────────────────→"| D["Collection<br/>(Collector/pipeline focus)"]
+    E["Centralized<br/>(platform team drives)"] ---|"←─────────────────→"| F["Decentralized<br/>(service teams drive)"]
 
-        Deep ◀───────────────────────▶ Wide
-        (one service in detail)      (many services, basic telemetry)
-
-        Code ◀───────────────────────▶ Collection
-        (SDK instrumentation)        (Collector/pipeline focus)
-
-  Centralized ◀───────────────────────▶ Decentralized
-  (platform team drives)              (service teams drive)
+    style A fill:#3b82f6,color:#fff
+    style B fill:#3b82f6,color:#fff
+    style C fill:#8b5cf6,color:#fff
+    style D fill:#8b5cf6,color:#fff
+    style E fill:#10b981,color:#fff
+    style F fill:#10b981,color:#fff
 ```
 
 ### 2.1. Deep vs. Wide
@@ -109,22 +111,20 @@ Example: SaaS startup migrating from OpenTracing
 **Code:** Focus on SDK instrumentation in applications
 **Collection:** Focus on Collector pipelines and infrastructure
 
-```
-The Code vs Collection Spectrum
-───────────────────────────────
+```mermaid
+graph LR
+    A["Code-First<br/>(Service Teams)"] --> B["I want to trace<br/>my service"]
+    B --> C["• SDK setup<br/>• Custom spans<br/>• Business metrics"]
 
-Code-First                              Collection-First
-(Service Teams)                         (Platform Teams)
-      │                                       │
-      ▼                                       ▼
-┌─────────────────────┐            ┌─────────────────────┐
-│ "I want to trace    │            │ "I want to collect  │
-│  my service"        │            │  everything first"  │
-│                     │            │                     │
-│ • SDK setup         │            │ • Collector deploy  │
-│ • Custom spans      │            │ • Pipeline config   │
-│ • Business metrics  │            │ • Transformations   │
-└─────────────────────┘            └─────────────────────┘
+    D["Collection-First<br/>(Platform Teams)"] --> E["I want to collect<br/>everything first"]
+    E --> F["• Collector deploy<br/>• Pipeline config<br/>• Transformations"]
+
+    style A fill:#3b82f6,color:#fff
+    style B fill:#3b82f6,color:#fff
+    style C fill:#3b82f6,color:#fff
+    style D fill:#8b5cf6,color:#fff
+    style E fill:#8b5cf6,color:#fff
+    style F fill:#8b5cf6,color:#fff
 ```
 
 **Ideal approach:** Both, evolving together
@@ -152,39 +152,32 @@ eBay's Approach (2021)
 **Centralized:** Platform team drives adoption
 **Decentralized:** Service teams adopt independently
 
-```
-Centralized Rollout
-───────────────────
+```mermaid
+graph TD
+    subgraph Centralized["Centralized Rollout"]
+        P["Platform Team<br/>• Defines standards<br/>• Deploys Collectors<br/>• Provides SDK wrappers<br/>• Manages backends"]
+        P --> SA["Service A<br/>(adopts standards)"]
+        P --> SB["Service B<br/>(adopts standards)"]
+        P --> SC["Service C<br/>(adopts standards)"]
+    end
 
-    ┌──────────────────────────────────────────────────────┐
-    │                   Platform Team                       │
-    │                                                      │
-    │  • Defines standards                                 │
-    │  • Deploys Collectors                                │
-    │  • Provides SDK wrappers                             │
-    │  • Manages backends                                  │
-    └────────────────────────┬─────────────────────────────┘
-                             │
-         ┌───────────────────┼───────────────────┐
-         ▼                   ▼                   ▼
-    Service A           Service B           Service C
-    (adopts             (adopts             (adopts
-     standards)          standards)          standards)
+    subgraph Decentralized["Decentralized Rollout"]
+        DA["Service A<br/>Adopts OTel<br/>(own way)"]
+        DB["Service B<br/>Adopts OTel<br/>(own way)"]
+        DC["Service C<br/>Adopts OTel<br/>(own way)"]
+        DA --> H["Hope they're<br/>compatible..."]
+        DB --> H
+        DC --> H
+    end
 
-
-Decentralized Rollout
-─────────────────────
-
-    Service A              Service B              Service C
-    ┌──────────┐          ┌──────────┐          ┌──────────┐
-    │ Adopts   │          │ Adopts   │          │ Adopts   │
-    │ OTel     │          │ OTel     │          │ OTel     │
-    │ (own way)│          │ (own way)│          │ (own way)│
-    └──────────┘          └──────────┘          └──────────┘
-         │                     │                     │
-         └─────────────────────┼─────────────────────┘
-                               ▼
-                    Hope they're compatible...
+    style P fill:#10b981,color:#fff
+    style SA fill:#3b82f6,color:#fff
+    style SB fill:#3b82f6,color:#fff
+    style SC fill:#3b82f6,color:#fff
+    style DA fill:#f59e0b,color:#fff
+    style DB fill:#f59e0b,color:#fff
+    style DC fill:#f59e0b,color:#fff
+    style H fill:#ef4444,color:#fff
 ```
 
 **Case Study: Farfetch (2000+ engineers)**
@@ -222,31 +215,15 @@ OpenTelemetry is crossing from early adopters to mainstream. What's next?
 
 **Use traces to validate system behavior:**
 
-```
-Observability-Based Testing
-───────────────────────────
+```mermaid
+graph TD
+    A["Baseline Trace (known good)<br/>Service A (50ms) → Service B (100ms) → DB (20ms)<br/>Total: 170ms, Status: OK"]
+    A --> B["Compare"]
+    B --> C["New Deployment Trace<br/>Service A (50ms) → Service B (500ms) → DB (20ms)<br/>Total: 570ms, Status: OK ⚠️ SLOW!"]
 
-Traditional Test:
-"Does function X return expected value?"
-
-Observability Test:
-"Does the production trace match our expected trace pattern?"
-
-┌─────────────────────────────────────────────────────────────────┐
-│ Baseline Trace (known good)                                     │
-│                                                                 │
-│ Service A (50ms) → Service B (100ms) → DB (20ms)              │
-│ Total: 170ms, Status: OK                                       │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-                         Compare
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ New Deployment Trace                                            │
-│                                                                 │
-│ Service A (50ms) → Service B (500ms) → DB (20ms)  ⚠️ SLOW!    │
-│ Total: 570ms, Status: OK                                       │
-└─────────────────────────────────────────────────────────────────┘
+    style A fill:#10b981,color:#fff
+    style B fill:#3b82f6,color:#fff
+    style C fill:#ef4444,color:#fff
 ```
 
 **Applications:**
@@ -280,29 +257,25 @@ Green Observability (emerging):
 
 **Observing AI/ML systems has unique requirements:**
 
-```
-AI Observability Use Cases
-──────────────────────────
+```mermaid
+graph TD
+    A["AI Observability Use Cases"]
+    A --> B["1. Training Observability"]
+    B --> B1["• Track model training runs<br/>• Monitor hyperparameter experiments<br/>• Trace data pipeline transformations"]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ 1. Training Observability                                       │
-│                                                                 │
-│ • Track model training runs                                    │
-│ • Monitor hyperparameter experiments                           │
-│ • Trace data pipeline transformations                         │
-├─────────────────────────────────────────────────────────────────┤
-│ 2. Inference Observability                                      │
-│                                                                 │
-│ • Trace retrieval + generation in RAG systems                 │
-│ • Monitor token usage and costs                               │
-│ • Track response latency distributions                        │
-├─────────────────────────────────────────────────────────────────┤
-│ 3. User Experience Observability                               │
-│                                                                 │
-│ • Capture user satisfaction signals                           │
-│ • Correlate feedback with specific model responses           │
-│ • Sample traces where users were unhappy                      │
-└─────────────────────────────────────────────────────────────────┘
+    A --> C["2. Inference Observability"]
+    C --> C1["• Trace retrieval + generation in RAG systems<br/>• Monitor token usage and costs<br/>• Track response latency distributions"]
+
+    A --> D["3. User Experience Observability"]
+    D --> D1["• Capture user satisfaction signals<br/>• Correlate feedback with specific model responses<br/>• Sample traces where users were unhappy"]
+
+    style A fill:#8b5cf6,color:#fff
+    style B fill:#3b82f6,color:#fff
+    style B1 fill:#3b82f6,color:#fff
+    style C fill:#10b981,color:#fff
+    style C1 fill:#10b981,color:#fff
+    style D fill:#f59e0b,color:#fff
+    style D1 fill:#f59e0b,color:#fff
 ```
 
 ---
@@ -353,28 +326,25 @@ Organizational Readiness
 
 ### The Golden Rules
 
-```
-OpenTelemetry Rollout Maxims
-────────────────────────────
+```mermaid
+graph TD
+    A["OpenTelemetry Rollout Maxims"]
+    A --> B["1. Do no harm, break no alerts"]
+    B --> B1["Don't break existing monitoring!<br/>Run old and new in parallel during migration."]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ 1. Do no harm, break no alerts                                  │
-│                                                                 │
-│    Don't break existing monitoring!                            │
-│    Run old and new in parallel during migration.               │
-├─────────────────────────────────────────────────────────────────┤
-│ 2. Prioritize value                                             │
-│                                                                 │
-│    What are you getting out of OpenTelemetry?                  │
-│    State it clearly. Repeat it often.                          │
-│    Keep everyone focused.                                      │
-├─────────────────────────────────────────────────────────────────┤
-│ 3. Don't forget the business                                    │
-│                                                                 │
-│    Observability helps the whole organization.                 │
-│    Involve stakeholders beyond engineering.                    │
-│    Show how telemetry connects to business outcomes.           │
-└─────────────────────────────────────────────────────────────────┘
+    A --> C["2. Prioritize value"]
+    C --> C1["What are you getting out of OpenTelemetry?<br/>State it clearly. Repeat it often.<br/>Keep everyone focused."]
+
+    A --> D["3. Don't forget the business"]
+    D --> D1["Observability helps the whole organization.<br/>Involve stakeholders beyond engineering.<br/>Show how telemetry connects to business outcomes."]
+
+    style A fill:#8b5cf6,color:#fff
+    style B fill:#3b82f6,color:#fff
+    style B1 fill:#3b82f6,color:#fff
+    style C fill:#10b981,color:#fff
+    style C1 fill:#10b981,color:#fff
+    style D fill:#f59e0b,color:#fff
+    style D1 fill:#f59e0b,color:#fff
 ```
 
 ---

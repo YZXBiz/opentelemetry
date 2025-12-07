@@ -4,6 +4,8 @@ title: "Chapter 7: Observing Infrastructure"
 description: "Cloud providers, Kubernetes, serverless, and async workflows - infrastructure observability with OpenTelemetry"
 ---
 
+import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@site/src/components/diagrams';
+
 # 🖥️ Chapter 7: Observing Infrastructure
 
 > **"We build our computer systems the way we build our cities: over time, without a plan, on top of ruins."**
@@ -41,15 +43,13 @@ description: "Cloud providers, Kubernetes, serverless, and async workflows - inf
 
 Infrastructure observability differs from application observability in an important way: **context**.
 
-```
-Application Observability              Infrastructure Observability
-───────────────────────────           ───────────────────────────────
+```mermaid
+graph LR
+    A["Application Observability<br/>'Request X took 500ms'<br/><br/>High correlation with<br/>specific requests"]
+    B["Infrastructure Observability<br/>'CPU was at 95% when request X<br/>ran on pod Y in node Z'<br/><br/>Often shared resources<br/>(many requests, same infra)"]
 
-"Request X took 500ms"                "CPU was at 95% when request X
-                                       ran on pod Y in node Z"
-
-High correlation with                 Often shared resources
-specific requests                     (many requests, same infra)
+    style A fill:#3b82f6,color:#fff
+    style B fill:#8b5cf6,color:#fff
 ```
 
 **Two key questions to ask:**
@@ -61,27 +61,15 @@ specific requests                     (many requests, same infra)
 
 ### The Infrastructure Taxonomy
 
-```
-Infrastructure Types
-────────────────────
+```mermaid
+graph TD
+    A["<b>Providers</b><br/>(source of infrastructure)<br/><br/>• Datacenters<br/>• Cloud Providers (AWS, GCP, Azure)<br/>• Colocation facilities"]
+    B["<b>Platforms</b><br/>(abstractions over providers)<br/><br/>• Container orchestration (Kubernetes)<br/>• Serverless (Lambda, Cloud Functions)<br/>• CI/CD (Jenkins, GitHub Actions)<br/>• Managed services (RDS, Cloud SQL)"]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Providers (source of infrastructure)                            │
-│                                                                 │
-│ • Datacenters                                                  │
-│ • Cloud Providers (AWS, GCP, Azure)                            │
-│ • Colocation facilities                                        │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ Platforms (abstractions over providers)                         │
-│                                                                 │
-│ • Container orchestration (Kubernetes)                         │
-│ • Serverless (Lambda, Cloud Functions)                         │
-│ • CI/CD (Jenkins, GitHub Actions)                              │
-│ • Managed services (RDS, Cloud SQL)                            │
-└─────────────────────────────────────────────────────────────────┘
+    A --> B
+
+    style A fill:#3b82f6,color:#fff
+    style B fill:#8b5cf6,color:#fff
 ```
 
 ---
@@ -92,25 +80,18 @@ Infrastructure Types
 
 Cloud providers offer a firehose of telemetry. Your job is to collect what's relevant:
 
-```
-The Cloud Telemetry Iceberg
-───────────────────────────
+```mermaid
+graph TD
+    A["What you usually look at<br/>Dashboards, alerts<br/>(5% of data)"]
+    B["Surface"]
+    C["What's available but rarely used<br/>API calls, detailed metrics,<br/>audit logs<br/>(95% of data)"]
 
-        ┌───────────────────────┐
-        │  What you usually     │  ← Dashboards, alerts
-        │  look at              │     (5% of data)
-        └───────────┬───────────┘
-                    │
-    ~~~~~~~~~~~~~~~~│~~~~~~~~~~~~~~~~  ← Surface
-                    │
-        ┌───────────▼───────────┐
-        │  What's available     │  ← API calls, detailed
-        │  but rarely used      │     metrics, audit logs
-        │                       │     (95% of data)
-        │                       │
-        │                       │
-        │                       │
-        └───────────────────────┘
+    A --> B
+    B --> C
+
+    style A fill:#10b981,color:#fff
+    style B fill:#f59e0b,color:#fff
+    style C fill:#3b82f6,color:#fff
 ```
 
 **Categories of cloud services:**
@@ -147,32 +128,24 @@ Practical Guidelines
 
 ### 3.2. Push vs. Pull
 
-```
-Push vs. Pull Metrics Collection
-────────────────────────────────
+```mermaid
+graph LR
+    subgraph Push["Push Model (OTLP default)"]
+        S1[Service] -->|push| C1[Collector]
+        C1 --> B1[Backend]
+    end
 
-Push Model (OTLP default)
-─────────────────────────
-┌─────────┐        ┌───────────┐
-│ Service │──push─▶│ Collector │──▶ Backend
-└─────────┘        └───────────┘
+    subgraph Pull["Pull Model (Prometheus style)"]
+        C2[Collector] -->|pull| S2["Service<br/>/metrics"]
+        C2 --> B2[Backend]
+    end
 
-• Service initiates connection
-• Works through firewalls
-• OTLP uses push
-
-
-Pull Model (Prometheus style)
-─────────────────────────────
-                   ┌───────────┐
-┌─────────┐◀─pull──│ Collector │──▶ Backend
-│ Service │        └───────────┘
-│ /metrics│
-└─────────┘
-
-• Collector initiates connection
-• Service must be reachable
-• Prometheus uses pull
+    style S1 fill:#3b82f6,color:#fff
+    style C1 fill:#8b5cf6,color:#fff
+    style B1 fill:#10b981,color:#fff
+    style S2 fill:#3b82f6,color:#fff
+    style C2 fill:#8b5cf6,color:#fff
+    style B2 fill:#10b981,color:#fff
 ```
 
 **OpenTelemetry Collector can do both:**
@@ -206,54 +179,34 @@ service:
 
 Kubernetes is complex enough to deserve special attention.
 
-```
-Kubernetes Telemetry Sources
-────────────────────────────
+```mermaid
+graph TD
+    A["<b>Cluster Level</b><br/><br/>• kube-state-metrics (object states)<br/>• API server metrics (request rates, latencies)<br/>• etcd metrics (cluster health)"]
+    B["<b>Node Level</b><br/><br/>• kubelet metrics (pod lifecycle)<br/>• node-exporter (host metrics)<br/>• Container runtime metrics"]
+    C["<b>Pod Level</b><br/><br/>• Application telemetry<br/>• Sidecar container telemetry<br/>• Resource usage (CPU, memory)"]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Cluster Level                                                    │
-│ • kube-state-metrics (object states)                            │
-│ • API server metrics (request rates, latencies)                 │
-│ • etcd metrics (cluster health)                                 │
-├─────────────────────────────────────────────────────────────────┤
-│ Node Level                                                       │
-│ • kubelet metrics (pod lifecycle)                               │
-│ • node-exporter (host metrics)                                  │
-│ • Container runtime metrics                                     │
-├─────────────────────────────────────────────────────────────────┤
-│ Pod Level                                                        │
-│ • Application telemetry                                         │
-│ • Sidecar container telemetry                                   │
-│ • Resource usage (CPU, memory)                                  │
-└─────────────────────────────────────────────────────────────────┘
+    A --> B
+    B --> C
+
+    style A fill:#3b82f6,color:#fff
+    style B fill:#8b5cf6,color:#fff
+    style C fill:#10b981,color:#fff
 ```
 
 **OpenTelemetry Operator for Kubernetes:**
 
-```
-Operator Capabilities
-─────────────────────
+```mermaid
+graph TD
+    A["<b>Collector Management</b><br/><br/>• DaemonSet: Collector on every node<br/>• Sidecar: Collector in every pod<br/>• Deployment: Collector pool<br/>• StatefulSet: Stateful collector pool"]
+    B["<b>Auto-Instrumentation Injection</b><br/><br/>• Java, Python, Node.js, .NET, Go<br/>• Injects via pod annotation<br/>• No code changes required"]
+    C["<b>Target Allocator</b><br/><br/>• Discovers Prometheus endpoints<br/>• Distributes scrape jobs across collectors<br/>• Enables horizontal scaling"]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Collector Management                                             │
-│                                                                 │
-│ • DaemonSet: Collector on every node                           │
-│ • Sidecar: Collector in every pod                              │
-│ • Deployment: Collector pool                                    │
-│ • StatefulSet: Stateful collector pool                         │
-├─────────────────────────────────────────────────────────────────┤
-│ Auto-Instrumentation Injection                                  │
-│                                                                 │
-│ • Java, Python, Node.js, .NET, Go                              │
-│ • Injects via pod annotation                                   │
-│ • No code changes required                                     │
-├─────────────────────────────────────────────────────────────────┤
-│ Target Allocator                                                │
-│                                                                 │
-│ • Discovers Prometheus endpoints                               │
-│ • Distributes scrape jobs across collectors                    │
-│ • Enables horizontal scaling                                   │
-└─────────────────────────────────────────────────────────────────┘
+    A --> B
+    B --> C
+
+    style A fill:#3b82f6,color:#fff
+    style B fill:#8b5cf6,color:#fff
+    style C fill:#10b981,color:#fff
 ```
 
 **Example: Auto-instrumentation injection**
@@ -283,26 +236,18 @@ spec:
 
 Serverless introduces unique challenges:
 
-```
-Serverless Observability Challenges
-───────────────────────────────────
+```mermaid
+graph TD
+    A["<b>Challenge: Ephemeral execution</b><br/><br/>Function starts → Runs → Dies<br/>Must export telemetry before death!"]
+    B["<b>Challenge: Cold starts</b><br/><br/>First invocation may be slow<br/>Need to track cold vs. warm performance separately"]
+    C["<b>Challenge: No persistent collector</b><br/><br/>Can't run sidecar that outlives function<br/>Must push directly or use extension"]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Challenge: Ephemeral execution                                   │
-│                                                                 │
-│ Function starts → Runs → Dies                                   │
-│ Must export telemetry before death!                            │
-├─────────────────────────────────────────────────────────────────┤
-│ Challenge: Cold starts                                          │
-│                                                                 │
-│ First invocation may be slow                                   │
-│ Need to track cold vs. warm performance separately             │
-├─────────────────────────────────────────────────────────────────┤
-│ Challenge: No persistent collector                              │
-│                                                                 │
-│ Can't run sidecar that outlives function                       │
-│ Must push directly or use extension                            │
-└─────────────────────────────────────────────────────────────────┘
+    A --> B
+    B --> C
+
+    style A fill:#ef4444,color:#fff
+    style B fill:#f59e0b,color:#fff
+    style C fill:#8b5cf6,color:#fff
 ```
 
 **Metrics to track for serverless:**
@@ -316,88 +261,75 @@ Serverless Observability Challenges
 
 **OpenTelemetry Lambda Layer:**
 
-```
-Lambda with OTel Layer
-──────────────────────
+```mermaid
+graph TD
+    A["<b>AWS Lambda</b>"]
+    B["OpenTelemetry Lambda Layer<br/>• Auto-instruments common libraries<br/>• Manages span lifecycle<br/>• Flushes on invocation end"]
+    C["Your Function Code<br/>• Runs with tracing enabled<br/>• No code changes needed for basic telemetry"]
+    D[Collector<br/>(dedicated pool)]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ AWS Lambda                                                       │
-│ ┌───────────────────────────────────────────────────────────┐   │
-│ │ OpenTelemetry Lambda Layer                                │   │
-│ │ • Auto-instruments common libraries                       │   │
-│ │ • Manages span lifecycle                                  │   │
-│ │ • Flushes on invocation end                              │   │
-│ └───────────────────────────────────────────────────────────┘   │
-│ ┌───────────────────────────────────────────────────────────┐   │
-│ │ Your Function Code                                        │   │
-│ │ • Runs with tracing enabled                              │   │
-│ │ • No code changes needed for basic telemetry             │   │
-│ └───────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              │ OTLP
-                              ▼
-                     ┌───────────────────┐
-                     │    Collector      │
-                     │ (dedicated pool)  │
-                     └───────────────────┘
+    A --> B
+    B --> C
+    C -->|OTLP| D
+
+    style A fill:#f59e0b,color:#fff
+    style B fill:#8b5cf6,color:#fff
+    style C fill:#3b82f6,color:#fff
+    style D fill:#10b981,color:#fff
 ```
 
 ### 4.3. Queues and Async Workflows
 
 Event-driven architectures present unique challenges:
 
-```
-The Async Observability Problem
-───────────────────────────────
+```mermaid
+graph TD
+    subgraph Traditional["Traditional Request/Response"]
+        U1[User] --> SA1[Service A]
+        SA1 --> SB1[Service B]
+        SB1 --> SC1[Service C]
+        SC1 --> R1[Response]
+    end
 
-Traditional Request/Response:
-User → Service A → Service B → Service C → Response
-     └──────────── One trace, clear parent-child ────────────┘
+    subgraph Async["Async/Event-Driven"]
+        U2[User] --> SA2[Service A]
+        SA2 --> Q1[Queue]
+        Q1 --> SB2[Service B]
+        Q1 --> SC2[Service C]
+        SC2 --> Q2[Queue]
+        Q2 --> SD2[Service D]
+        SD2 --> SE2[Service E]
+    end
 
-Async/Event-Driven:
-User → Service A → Queue → Service B
-                       ↓
-                    Service C
-                       ↓
-                    Service D → Queue → Service E
-
-Questions:
-• When does the "transaction" end?
-• How do you trace across queues?
-• What if processing takes hours?
+    style U1 fill:#3b82f6,color:#fff
+    style SA1 fill:#10b981,color:#fff
+    style SB1 fill:#10b981,color:#fff
+    style SC1 fill:#10b981,color:#fff
+    style R1 fill:#8b5cf6,color:#fff
+    style U2 fill:#3b82f6,color:#fff
+    style SA2 fill:#10b981,color:#fff
+    style Q1 fill:#f59e0b,color:#fff
+    style SB2 fill:#10b981,color:#fff
+    style SC2 fill:#10b981,color:#fff
+    style Q2 fill:#f59e0b,color:#fff
+    style SD2 fill:#10b981,color:#fff
+    style SE2 fill:#10b981,color:#fff
 ```
 
 **Solution: Span Links**
 
-```
-Using Span Links for Async
-──────────────────────────
+```mermaid
+graph TD
+    A["<b>Producer (Trace 1)</b><br/><br/>Span: 'publish-message'<br/>trace_id: abc123<br/>span_id: 001<br/><br/>Attaches span context to message headers"]
+    Q[Queue]
+    B["<b>Consumer (Trace 2 - NEW trace!)</b><br/><br/>Span: 'process-message'<br/>trace_id: xyz789 ← Different trace!<br/>span_id: 001<br/>links: [{trace_id: abc123, span_id: 001}] ← Link to producer"]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Producer (Trace 1)                                              │
-│                                                                 │
-│ Span: "publish-message"                                         │
-│ trace_id: abc123                                                │
-│ span_id: 001                                                    │
-│                                                                 │
-│ Attaches span context to message headers                       │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │ message
-                            ▼
-                    ┌───────────────┐
-                    │     Queue     │
-                    └───────┬───────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ Consumer (Trace 2 - NEW trace!)                                 │
-│                                                                 │
-│ Span: "process-message"                                         │
-│ trace_id: xyz789  ← Different trace!                           │
-│ span_id: 001                                                    │
-│ links: [{trace_id: abc123, span_id: 001}]  ← Link to producer  │
-└─────────────────────────────────────────────────────────────────┘
+    A -->|message| Q
+    Q --> B
+
+    style A fill:#3b82f6,color:#fff
+    style Q fill:#f59e0b,color:#fff
+    style B fill:#8b5cf6,color:#fff
 ```
 
 **Why separate traces?**

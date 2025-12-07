@@ -1,9 +1,14 @@
 /**
- * OpenTelemetry Guide custom styles
+ * OpenTelemetry Guide - Primary Style
  * Blue theme for professional technical documentation
  */
 
+/* ===========================================
+   COLOR PALETTE
+   =========================================== */
+
 :root {
+  /* Primary Blue */
   --ifm-color-primary: #4a90d9;
   --ifm-color-primary-dark: #3580d1;
   --ifm-color-primary-darker: #2d78c9;
@@ -11,8 +16,22 @@
   --ifm-color-primary-light: #5fa0e1;
   --ifm-color-primary-lighter: #6ba8e4;
   --ifm-color-primary-lightest: #8fbfec;
+
+  /* Semantic Colors */
+  --color-blue: #3b82f6;
+  --color-purple: #8b5cf6;
+  --color-green: #10b981;
+  --color-orange: #f59e0b;
+  --color-red: #ef4444;
+  --color-slate: #64748b;
+
+  /* Code */
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+
+  /* Spacing */
+  --content-padding: 1rem;
+  --border-radius: 8px;
 }
 
 [data-theme='dark'] {
@@ -26,38 +45,224 @@
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
 
-/* Insight boxes - special styling for blockquotes */
+/* ===========================================
+   BLOCKQUOTES & INSIGHT BOXES
+   =========================================== */
+
 blockquote {
   border-left: 4px solid var(--ifm-color-primary);
   background-color: rgba(74, 144, 217, 0.1);
-  padding: 1rem;
-  border-radius: 0 8px 8px 0;
+  padding: var(--content-padding);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  margin: 1.5rem 0;
 }
 
 [data-theme='dark'] blockquote {
   background-color: rgba(107, 168, 228, 0.1);
 }
 
-/* Table of Contents styling */
+/* ===========================================
+   ADMONITIONS (tip, warning, danger, etc.)
+   =========================================== */
+
+.alert--info {
+  --ifm-alert-background-color: rgba(59, 130, 246, 0.1);
+  --ifm-alert-border-color: var(--color-blue);
+}
+
+.alert--success {
+  --ifm-alert-background-color: rgba(16, 185, 129, 0.1);
+  --ifm-alert-border-color: var(--color-green);
+}
+
+.alert--warning {
+  --ifm-alert-background-color: rgba(245, 158, 11, 0.1);
+  --ifm-alert-border-color: var(--color-orange);
+}
+
+.alert--danger {
+  --ifm-alert-background-color: rgba(239, 68, 68, 0.1);
+  --ifm-alert-border-color: var(--color-red);
+}
+
+/* ===========================================
+   TABLES
+   =========================================== */
+
+table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+table thead {
+  background-color: rgba(74, 144, 217, 0.1);
+}
+
+[data-theme='dark'] table thead {
+  background-color: rgba(107, 168, 228, 0.15);
+}
+
+table th {
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--ifm-color-primary);
+}
+
+table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+table tbody tr:hover {
+  background-color: rgba(74, 144, 217, 0.05);
+}
+
+[data-theme='dark'] table tbody tr:hover {
+  background-color: rgba(107, 168, 228, 0.08);
+}
+
+/* ===========================================
+   CODE BLOCKS
+   =========================================== */
+
+.prism-code {
+  border-radius: var(--border-radius);
+}
+
+code {
+  border-radius: 4px;
+  padding: 0.1rem 0.3rem;
+}
+
+/* ===========================================
+   MERMAID DIAGRAMS
+   =========================================== */
+
+.mermaid {
+  background-color: transparent !important;
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+/* Ensure Mermaid text is visible in dark mode */
+[data-theme='dark'] .mermaid {
+  filter: invert(0);
+}
+
+/* ===========================================
+   HEADINGS
+   =========================================== */
+
+.markdown h1 {
+  font-size: 2rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.markdown h2 {
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+.markdown h3 {
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ===========================================
+   TABLE OF CONTENTS
+   =========================================== */
+
 .table-of-contents {
   font-size: 0.95rem;
 }
 
-/* Code block enhancements */
-.prism-code {
-  border-radius: 8px;
+.table-of-contents__link:hover {
+  color: var(--ifm-color-primary);
 }
 
-/* Better heading spacing */
-.markdown h2 {
-  margin-top: 2rem;
+.table-of-contents__link--active {
+  color: var(--ifm-color-primary);
+  font-weight: 600;
 }
 
-.markdown h3 {
-  margin-top: 1.5rem;
-}
+/* ===========================================
+   NAVIGATION
+   =========================================== */
 
-/* Navigation links at bottom of pages */
 .pagination-nav {
-  margin-top: 2rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ifm-toc-border-color);
+}
+
+.pagination-nav__link {
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
+}
+
+.pagination-nav__link:hover {
+  border-color: var(--ifm-color-primary);
+  background-color: rgba(74, 144, 217, 0.05);
+}
+
+/* ===========================================
+   SIDEBAR
+   =========================================== */
+
+.menu__link--active:not(.menu__link--sublist) {
+  background-color: rgba(74, 144, 217, 0.1);
+}
+
+.menu__link:hover {
+  background-color: rgba(74, 144, 217, 0.08);
+}
+
+/* ===========================================
+   CUSTOM SVG DIAGRAMS
+   =========================================== */
+
+.diagram-container {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.diagram-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ===========================================
+   UTILITIES
+   =========================================== */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better focus states */
+a:focus,
+button:focus {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 2px;
+}
+
+/* Selection color */
+::selection {
+  background-color: rgba(74, 144, 217, 0.3);
+}
+
+[data-theme='dark'] ::selection {
+  background-color: rgba(107, 168, 228, 0.3);
 }

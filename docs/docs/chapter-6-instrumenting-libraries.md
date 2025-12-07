@@ -4,6 +4,8 @@ title: "Chapter 6: Instrumenting Libraries"
 description: "Why and how to add native OpenTelemetry instrumentation to shared libraries"
 ---
 
+import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@site/src/components/diagrams';
+
 # 📚 Chapter 6: Instrumenting Libraries
 
 > **"The price of reliability is the pursuit of the utmost simplicity."**
@@ -42,30 +44,15 @@ description: "Why and how to add native OpenTelemetry instrumentation to shared 
 
 Most of the work in your application happens inside libraries:
 
-```
-Where Resource Usage Actually Happens
-─────────────────────────────────────
+```mermaid
+graph TD
+    App["Your Application Code<br/>─────────────────────<br/>Get user data, validate it, save to database<br/><br/>• Decides WHAT to do<br/>• Uses ~5% of CPU/memory"]
+    Lib["Library Code<br/>─────────────────────<br/>HTTP client, database driver, serialization, caching<br/><br/>• Does the ACTUAL work<br/>• Uses ~95% of CPU/memory<br/>• Where most problems actually occur"]
 
-┌─────────────────────────────────────────────────────────────────┐
-│                    Your Application Code                         │
-│                                                                  │
-│  "Get user data, validate it, save to database"                 │
-│                                                                  │
-│  • Decides WHAT to do                                           │
-│  • Uses ~5% of CPU/memory                                       │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              │ calls
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Library Code                                  │
-│                                                                  │
-│  HTTP client, database driver, serialization, caching           │
-│                                                                  │
-│  • Does the ACTUAL work                                         │
-│  • Uses ~95% of CPU/memory                                      │
-│  • Where most problems actually occur                           │
-└─────────────────────────────────────────────────────────────────┘
+    App -->|calls| Lib
+
+    style App fill:#3b82f6,color:#fff
+    style Lib fill:#8b5cf6,color:#fff
 ```
 
 **Common production problems that originate in library usage:**
@@ -90,62 +77,43 @@ Where Resource Usage Actually Happens
 
 **In plain English:** When a user installs your library, observability should just work—no extra plugins or configuration needed.
 
-```
-Without Native Instrumentation
-──────────────────────────────
+```mermaid
+graph LR
+    subgraph Without["Without Native Instrumentation"]
+        W1["Install:<br/>your-database-driver"]
+        W2["Install:<br/>opentelemetry-instrumentation-your-driver<br/>(separate package!)"]
+        W3["Hope they're<br/>compatible versions!"]
+        W4["Then user must:<br/>• Find instrumentation package<br/>• Install it<br/>• Configure it<br/>• Hope it stays maintained<br/>• Update both in sync"]
+        W1 --> W2 --> W3 --> W4
+    end
 
-User installs:
-├── your-database-driver
-├── opentelemetry-instrumentation-your-driver (separate package!)
-└── Hope they're compatible versions!
+    subgraph With["With Native Instrumentation"]
+        N1["Install:<br/>your-database-driver<br/>(instrumentation included!)"]
+        N2["Nothing!<br/>It just works when<br/>OTel SDK is present"]
+        N1 --> N2
+    end
 
-Then user must:
-├── Find the instrumentation package
-├── Install it
-├── Configure it
-├── Hope it stays maintained
-└── Update both packages in sync
-
-
-With Native Instrumentation
-───────────────────────────
-
-User installs:
-└── your-database-driver (instrumentation included!)
-
-Then user must:
-└── Nothing! It just works when OTel SDK is present
+    style W1 fill:#ef4444,color:#fff
+    style W2 fill:#ef4444,color:#fff
+    style W3 fill:#ef4444,color:#fff
+    style W4 fill:#ef4444,color:#fff
+    style N1 fill:#10b981,color:#fff
+    style N2 fill:#10b981,color:#fff
 ```
 
 ### 3.2. Communicating with Users
 
 **Your telemetry is a communication channel with your users.**
 
-```
-What Your Telemetry Can Tell Users
-──────────────────────────────────
+```mermaid
+graph TD
+    T1["Warnings & Configuration Issues<br/>─────────────────────<br/>Connection pool exhausted - consider increasing pool size<br/>Query took 5s - missing index on column X?<br/>Buffer overflow - reduce batch size"]
+    T2["Performance Patterns<br/>─────────────────────<br/>Spans show: 10 sequential queries to same table<br/>Message: Consider using batch query instead"]
+    T3["Usage Antipatterns<br/>─────────────────────<br/>Traces reveal: New connection created for each request<br/>Message: Reuse connections via pooling"]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Warnings & Configuration Issues                                  │
-│                                                                  │
-│ "Connection pool exhausted - consider increasing pool size"     │
-│ "Query took 5s - missing index on column X?"                   │
-│ "Buffer overflow - reduce batch size"                          │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│ Performance Patterns                                             │
-│                                                                  │
-│ Spans show: 10 sequential queries to same table                 │
-│ Message: "Consider using batch query instead"                   │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│ Usage Antipatterns                                              │
-│                                                                  │
-│ Traces reveal: New connection created for each request          │
-│ Message: "Reuse connections via pooling"                        │
-└─────────────────────────────────────────────────────────────────┘
+    style T1 fill:#f59e0b,color:#fff
+    style T2 fill:#3b82f6,color:#fff
+    style T3 fill:#ef4444,color:#fff
 ```
 
 **Documentation powered by telemetry:**
@@ -163,32 +131,20 @@ What Your Telemetry Can Tell Users
 
 **In technical terms:** Native instrumentation can be optimized alongside the library code, avoiding the overhead of generic wrappers.
 
+```mermaid
+graph LR
+    subgraph Problem["Third-Party Instrumentation Problems"]
+        P1["Your Library<br/>─────────────<br/>function query(sql) {<br/>  // Your optimized code<br/>  return result<br/>}"]
+        P2["Wrapper Instrumentation<br/>─────────────<br/>function wrapQuery(sql) {<br/>  startSpan()<br/>  try {<br/>    result = query(sql)<br/>    addAttributes(...) ← Slow!<br/>  } finally {<br/>    endSpan()<br/>  }<br/>}<br/><br/>Problems:<br/>• Extra function call overhead<br/>• Can't access internal state efficiently<br/>• May copy data unnecessarily<br/>• Often misses important details"]
+        P1 --> P2
+    end
+
+    style P1 fill:#3b82f6,color:#fff
+    style P2 fill:#ef4444,color:#fff
 ```
-Third-Party Instrumentation Problems
-────────────────────────────────────
 
-┌──────────────────────────────────────────────────────────────────┐
-│ Your Library                      Wrapper Instrumentation        │
-│                                                                  │
-│ function query(sql) {             function wrapQuery(sql) {      │
-│   // Your optimized code            startSpan()                  │
-│   return result                     try {                        │
-│ }                                     result = query(sql)        │
-│                                       addAttributes(...)  ← Slow!│
-│                                     } finally {                  │
-│                                       endSpan()                  │
-│                                     }                            │
-│                                   }                              │
-│                                                                  │
-│ Problems:                                                        │
-│ • Extra function call overhead                                  │
-│ • Can't access internal state efficiently                       │
-│ • May copy data unnecessarily                                   │
-│ • Often misses important details                                │
-└──────────────────────────────────────────────────────────────────┘
-
-Native Instrumentation
-──────────────────────
+```javascript
+// Native Instrumentation
 
 function query(sql) {
   span = tracer.startSpan("query")  // Only if SDK present
@@ -212,26 +168,45 @@ function query(sql) {
 
 Historically, library authors faced impossible choices:
 
-```
-The Old Problem
-───────────────
+```mermaid
+graph TD
+    Choice["Your Library Must Pick ONE:"]
+    A["Vendor A's SDK?"]
+    B["Vendor B's SDK?"]
+    C["Vendor C's SDK?"]
 
-Your Library Must Pick ONE:
+    A1["Works for A users"]
+    B1["Works for B users"]
+    C1["Works for C users"]
 
-    Vendor A's SDK?        Vendor B's SDK?        Vendor C's SDK?
-         │                      │                      │
-         ▼                      ▼                      ▼
-    ┌─────────┐           ┌─────────┐           ┌─────────┐
-    │ Works   │           │ Works   │           │ Works   │
-    │ for A   │           │ for B   │           │ for C   │
-    │ users   │           │ users   │           │ users   │
-    └─────────┘           └─────────┘           └─────────┘
-         │                      │                      │
-         ▼                      ▼                      ▼
-    Alienates              Alienates              Alienates
-    B & C users            A & C users            A & B users
+    A2["Alienates B & C users"]
+    B2["Alienates A & C users"]
+    C2["Alienates A & B users"]
 
-    There was NO RIGHT ANSWER!
+    Choice --> A
+    Choice --> B
+    Choice --> C
+
+    A --> A1 --> A2
+    B --> B1 --> B2
+    C --> C1 --> C2
+
+    Problem["There was NO RIGHT ANSWER!"]
+    A2 --> Problem
+    B2 --> Problem
+    C2 --> Problem
+
+    style Choice fill:#8b5cf6,color:#fff
+    style A fill:#3b82f6,color:#fff
+    style B fill:#3b82f6,color:#fff
+    style C fill:#3b82f6,color:#fff
+    style A1 fill:#10b981,color:#fff
+    style B1 fill:#10b981,color:#fff
+    style C1 fill:#10b981,color:#fff
+    style A2 fill:#ef4444,color:#fff
+    style B2 fill:#ef4444,color:#fff
+    style C2 fill:#ef4444,color:#fff
+    style Problem fill:#ef4444,color:#fff
 ```
 
 **The tracing problem was especially bad:**
@@ -252,30 +227,37 @@ Your Library Must Pick ONE:
 
 OpenTelemetry is designed specifically for library instrumentation:
 
-```
-How OpenTelemetry Solves the Problem
-────────────────────────────────────
+```mermaid
+graph TD
+    Lib["Your Library"]
+    API["OpenTelemetry API<br/>─────────────<br/>• Zero overhead<br/>• No-op by default<br/>• Stable forever"]
 
-                    Your Library
-                         │
-                         │ depends on (API only)
-                         ▼
-              ┌─────────────────────┐
-              │  OpenTelemetry API  │
-              │  • Zero overhead    │
-              │  • No-op by default │
-              │  • Stable forever   │
-              └──────────┬──────────┘
-                         │
-       ┌─────────────────┼─────────────────┐
-       │                 │                 │
-       ▼                 ▼                 ▼
-  User's App #1    User's App #2    User's App #3
-  Uses Datadog     Uses Jaeger      Uses no OTel
-       │                 │                 │
-       ▼                 ▼                 ▼
-   OTel SDK +       OTel SDK +       No SDK
-   Datadog export   Jaeger export    (instrumentation is no-op)
+    App1["User's App #1<br/>Uses Datadog"]
+    App2["User's App #2<br/>Uses Jaeger"]
+    App3["User's App #3<br/>Uses no OTel"]
+
+    SDK1["OTel SDK +<br/>Datadog export"]
+    SDK2["OTel SDK +<br/>Jaeger export"]
+    NoSDK["No SDK<br/>(instrumentation is no-op)"]
+
+    Lib -->|depends on<br/>(API only)| API
+
+    API --> App1
+    API --> App2
+    API --> App3
+
+    App1 --> SDK1
+    App2 --> SDK2
+    App3 --> NoSDK
+
+    style Lib fill:#8b5cf6,color:#fff
+    style API fill:#3b82f6,color:#fff
+    style App1 fill:#10b981,color:#fff
+    style App2 fill:#10b981,color:#fff
+    style App3 fill:#10b981,color:#fff
+    style SDK1 fill:#f59e0b,color:#fff
+    style SDK2 fill:#f59e0b,color:#fff
+    style NoSDK fill:#6b7280,color:#fff
 ```
 
 **Key design decisions:**

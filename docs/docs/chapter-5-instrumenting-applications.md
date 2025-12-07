@@ -4,6 +4,8 @@ title: "Chapter 5: Instrumenting Applications"
 description: "Practical guide to setting up the SDK, registering providers, and instrumenting your application code"
 ---
 
+import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@site/src/components/diagrams';
+
 # 🔧 Chapter 5: Instrumenting Applications
 
 > **"It is easier to write an incorrect program than understand a correct one."**
@@ -47,30 +49,28 @@ description: "Practical guide to setting up the SDK, registering providers, and 
 
 The fastest way to get started is with **auto-instrumentation**:
 
-```
-Auto-Instrumentation Approaches
-───────────────────────────────
+```mermaid
+graph TD
+    A[Java Agent]
+    B[Python Auto-Instrumentation]
+    C[Node.js Auto-Instrumentation]
+    D[.NET Auto-Instrumentation]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Java Agent                                                      │
-│ • java -javaagent:opentelemetry-javaagent.jar -jar myapp.jar   │
-│ • Instruments bytecode at runtime                               │
-│ • 100+ libraries instrumented automatically                     │
-├─────────────────────────────────────────────────────────────────┤
-│ Python Auto-Instrumentation                                     │
-│ • opentelemetry-instrument python myapp.py                     │
-│ • Uses monkey-patching                                          │
-│ • Covers Flask, Django, requests, etc.                         │
-├─────────────────────────────────────────────────────────────────┤
-│ Node.js Auto-Instrumentation                                    │
-│ • node --require @opentelemetry/auto-instrumentations-node app.js│
-│ • Uses require hooks                                            │
-│ • Covers Express, http, pg, mysql, etc.                        │
-├─────────────────────────────────────────────────────────────────┤
-│ .NET Auto-Instrumentation                                       │
-│ • Uses CLR profiling                                           │
-│ • Instruments ASP.NET Core, HttpClient, etc.                   │
-└─────────────────────────────────────────────────────────────────┘
+    A -->|Instruments bytecode at runtime| A1[100+ libraries instrumented automatically]
+    A -->|Command| A2["java -javaagent:opentelemetry-javaagent.jar -jar myapp.jar"]
+
+    B -->|Uses monkey-patching| B1[Covers Flask, Django, requests, etc.]
+    B -->|Command| B2["opentelemetry-instrument python myapp.py"]
+
+    C -->|Uses require hooks| C1[Covers Express, http, pg, mysql, etc.]
+    C -->|Command| C2["node --require @opentelemetry/auto-instrumentations-node app.js"]
+
+    D -->|Uses CLR profiling| D1[Instruments ASP.NET Core, HttpClient, etc.]
+
+    style A fill:#3b82f6,color:#fff
+    style B fill:#8b5cf6,color:#fff
+    style C fill:#10b981,color:#fff
+    style D fill:#f59e0b,color:#fff
 ```
 
 **When to use auto-instrumentation:**
@@ -94,61 +94,61 @@ Auto-Instrumentation Approaches
 
 Each signal type has its own **Provider** that must be registered:
 
-```
-Provider Registration Flow
-──────────────────────────
+```mermaid
+graph TD
+    Start[Application Startup] --> Step1[1. Create Resource - describes your service]
+    Step1 --> Step2[2. Create Provider with Resource]
+    Step2 --> Step2a[TracerProvider]
+    Step2 --> Step2b[MeterProvider]
+    Step2 --> Step2c[LoggerProvider]
+    Step2a --> Step3[3. Configure exporters and processors]
+    Step2b --> Step3
+    Step2c --> Step3
+    Step3 --> Step4[4. Register as global provider]
+    Step4 --> Step5[5. Start application]
 
-Application Startup
-        │
-        ▼
-┌───────────────────────────────────────────────────────────┐
-│ 1. Create Resource (describes your service)               │
-├───────────────────────────────────────────────────────────┤
-│ 2. Create Provider(s) with Resource                       │
-│    • TracerProvider                                       │
-│    • MeterProvider                                        │
-│    • LoggerProvider                                       │
-├───────────────────────────────────────────────────────────┤
-│ 3. Configure exporters and processors                     │
-├───────────────────────────────────────────────────────────┤
-│ 4. Register as global provider(s)                         │
-├───────────────────────────────────────────────────────────┤
-│ 5. Start application                                      │
-└───────────────────────────────────────────────────────────┘
+    style Start fill:#8b5cf6,color:#fff
+    style Step1 fill:#3b82f6,color:#fff
+    style Step2 fill:#3b82f6,color:#fff
+    style Step2a fill:#10b981,color:#fff
+    style Step2b fill:#10b981,color:#fff
+    style Step2c fill:#10b981,color:#fff
+    style Step3 fill:#3b82f6,color:#fff
+    style Step4 fill:#3b82f6,color:#fff
+    style Step5 fill:#8b5cf6,color:#fff
 ```
 
 ### 3.2. TracerProvider
 
 The **TracerProvider** manages trace collection:
 
-```
-TracerProvider Structure
-────────────────────────
+```mermaid
+graph TD
+    TP[TracerProvider]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ TracerProvider                                                   │
-│                                                                  │
-│  ┌──────────────┐                                               │
-│  │   Resource   │  "Who is sending this data?"                  │
-│  │  service.name│  service.name: "payment-service"              │
-│  │  host.name   │  service.version: "1.2.3"                    │
-│  └──────────────┘                                               │
-│                                                                  │
-│  ┌──────────────┐                                               │
-│  │   Sampler    │  "Should we record this trace?"               │
-│  │              │  • AlwaysOn                                   │
-│  │              │  • AlwaysOff                                  │
-│  │              │  • TraceIdRatioBased(0.1) → 10%              │
-│  │              │  • ParentBased                                │
-│  └──────────────┘                                               │
-│                                                                  │
-│  ┌──────────────┐   ┌──────────────┐                           │
-│  │  Processor   │──▶│  Exporter    │                           │
-│  │              │   │              │                           │
-│  │ BatchSpan-   │   │ OTLPSpan-    │  → To Collector/Backend   │
-│  │ Processor    │   │ Exporter     │                           │
-│  └──────────────┘   └──────────────┘                           │
-└─────────────────────────────────────────────────────────────────┘
+    TP --> R[Resource]
+    R --> R1["service.name: payment-service"]
+    R --> R2["service.version: 1.2.3"]
+    R1 -.->|Who is sending this data?| R
+
+    TP --> S[Sampler]
+    S --> S1[AlwaysOn]
+    S --> S2[AlwaysOff]
+    S --> S3[TraceIdRatioBased 10%]
+    S --> S4[ParentBased]
+    S -.->|Should we record this trace?| S
+
+    TP --> P[Processor]
+    P --> P1[BatchSpanProcessor]
+    P1 --> E[Exporter]
+    E --> E1[OTLPSpanExporter]
+    E1 -.-> Backend[To Collector/Backend]
+
+    style TP fill:#8b5cf6,color:#fff
+    style R fill:#3b82f6,color:#fff
+    style S fill:#f59e0b,color:#fff
+    style P fill:#10b981,color:#fff
+    style E fill:#10b981,color:#fff
 ```
 
 **Python example:**
@@ -185,66 +185,54 @@ tracer = trace.get_tracer("payment-service")
 
 The **MeterProvider** manages metric collection:
 
-```
-MeterProvider Structure
-───────────────────────
+```mermaid
+graph TD
+    MP[MeterProvider]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ MeterProvider                                                    │
-│                                                                  │
-│  ┌──────────────┐                                               │
-│  │   Resource   │  Same resource as TracerProvider              │
-│  └──────────────┘                                               │
-│                                                                  │
-│  ┌──────────────┐   ┌──────────────┐                           │
-│  │ MetricReader │──▶│  Exporter    │                           │
-│  │              │   │              │                           │
-│  │ Periodic-    │   │ OTLPMetric-  │  → To Collector/Backend   │
-│  │ ExportReader │   │ Exporter     │                           │
-│  │ (60s default)│   │              │                           │
-│  └──────────────┘   └──────────────┘                           │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────┐        │
-│  │ Views (optional)                                     │        │
-│  │ • Rename metrics                                    │        │
-│  │ • Change aggregation                                │        │
-│  │ • Filter attributes                                 │        │
-│  └─────────────────────────────────────────────────────┘        │
-└─────────────────────────────────────────────────────────────────┘
+    MP --> R[Resource]
+    R -.->|Same resource as TracerProvider| R
+
+    MP --> MR[MetricReader]
+    MR --> MR1[PeriodicExportReader<br/>60s default]
+    MR1 --> E[Exporter]
+    E --> E1[OTLPMetricExporter]
+    E1 -.-> Backend[To Collector/Backend]
+
+    MP --> V[Views - optional]
+    V --> V1[Rename metrics]
+    V --> V2[Change aggregation]
+    V --> V3[Filter attributes]
+
+    style MP fill:#8b5cf6,color:#fff
+    style R fill:#3b82f6,color:#fff
+    style MR fill:#10b981,color:#fff
+    style E fill:#10b981,color:#fff
+    style V fill:#f59e0b,color:#fff
 ```
 
 ### 3.4. LoggerProvider
 
 The **LoggerProvider** manages log collection and bridges existing logging libraries:
 
-```
-LoggerProvider + Bridge
-───────────────────────
+```mermaid
+graph TD
+    App[Your Application]
+    App --> Log[Existing Logging<br/>Python logging, Log4j, etc.]
+    Log --> LogCode["logger.info('User logged in', extra={'user_id': 123})"]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Your Application                                                 │
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │ Existing Logging (Python logging, Log4j, etc.)           │   │
-│  │                                                          │   │
-│  │  logger.info("User logged in", extra={"user_id": 123})  │   │
-│  └────────────────────────┬─────────────────────────────────┘   │
-│                           │                                      │
-│                           ▼                                      │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │ Logging Bridge (e.g., LoggingHandler)                    │   │
-│  │ • Captures logs from existing framework                  │   │
-│  │ • Adds trace context automatically                       │   │
-│  │ • Converts to OTel Log format                           │   │
-│  └────────────────────────┬─────────────────────────────────┘   │
-│                           │                                      │
-│                           ▼                                      │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │ LoggerProvider                                           │   │
-│  │ • Processes and exports logs                            │   │
-│  │ • Adds Resource attributes                              │   │
-│  └──────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
+    LogCode --> Bridge[Logging Bridge<br/>LoggingHandler]
+    Bridge --> B1[Captures logs from existing framework]
+    Bridge --> B2[Adds trace context automatically]
+    Bridge --> B3[Converts to OTel Log format]
+
+    Bridge --> LP[LoggerProvider]
+    LP --> LP1[Processes and exports logs]
+    LP --> LP2[Adds Resource attributes]
+
+    style App fill:#8b5cf6,color:#fff
+    style Log fill:#3b82f6,color:#fff
+    style Bridge fill:#10b981,color:#fff
+    style LP fill:#f59e0b,color:#fff
 ```
 
 > **💡 Insight**
@@ -295,33 +283,38 @@ OTEL_LOG_LEVEL=info
 
 **Resources** describe the entity producing telemetry:
 
-```
-Resource Attributes
-───────────────────
+```mermaid
+graph TD
+    R[Resource Attributes]
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Service Attributes                                               │
-│ • service.name         → "payment-service" (required!)          │
-│ • service.version      → "1.2.3"                                │
-│ • service.namespace    → "shop"                                 │
-├─────────────────────────────────────────────────────────────────┤
-│ Deployment Attributes                                           │
-│ • deployment.environment → "production"                         │
-├─────────────────────────────────────────────────────────────────┤
-│ Host Attributes (auto-detected)                                 │
-│ • host.name           → "prod-server-01"                       │
-│ • host.type           → "n1-standard-4"                        │
-├─────────────────────────────────────────────────────────────────┤
-│ Cloud Attributes (auto-detected)                                │
-│ • cloud.provider      → "gcp"                                  │
-│ • cloud.region        → "us-central1"                          │
-│ • cloud.availability_zone → "us-central1-a"                    │
-├─────────────────────────────────────────────────────────────────┤
-│ Kubernetes Attributes (auto-detected by Collector)             │
-│ • k8s.pod.name        → "payment-service-5d8f9c7b4-2xq9m"     │
-│ • k8s.namespace.name  → "production"                           │
-│ • k8s.deployment.name → "payment-service"                      │
-└─────────────────────────────────────────────────────────────────┘
+    R --> S[Service Attributes]
+    S --> S1["service.name → payment-service (required!)"]
+    S --> S2["service.version → 1.2.3"]
+    S --> S3["service.namespace → shop"]
+
+    R --> D[Deployment Attributes]
+    D --> D1["deployment.environment → production"]
+
+    R --> H[Host Attributes - auto-detected]
+    H --> H1["host.name → prod-server-01"]
+    H --> H2["host.type → n1-standard-4"]
+
+    R --> C[Cloud Attributes - auto-detected]
+    C --> C1["cloud.provider → gcp"]
+    C --> C2["cloud.region → us-central1"]
+    C --> C3["cloud.availability_zone → us-central1-a"]
+
+    R --> K[Kubernetes Attributes - auto-detected by Collector]
+    K --> K1["k8s.pod.name → payment-service-5d8f9c7b4-2xq9m"]
+    K --> K2["k8s.namespace.name → production"]
+    K --> K3["k8s.deployment.name → payment-service"]
+
+    style R fill:#8b5cf6,color:#fff
+    style S fill:#3b82f6,color:#fff
+    style D fill:#10b981,color:#fff
+    style H fill:#f59e0b,color:#fff
+    style C fill:#ef4444,color:#fff
+    style K fill:#8b5cf6,color:#fff
 ```
 
 > **⚠️ Warning**

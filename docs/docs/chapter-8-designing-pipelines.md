@@ -4,6 +4,8 @@ title: "Chapter 8: Designing Telemetry Pipelines"
 description: "Collector topologies, filtering, sampling, transformation, and managing telemetry at scale"
 ---
 
+import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram, ArchitectureDiagram } from '@site/src/components/diagrams';
+
 # 🌊 Chapter 8: Designing Telemetry Pipelines
 
 > **"I have always found that plans are useless, but planning is indispensable."**
@@ -47,21 +49,16 @@ description: "Collector topologies, filtering, sampling, transformation, and man
 
 The simplest setup: SDKs export directly to backends.
 
-```
-No Collector Topology
-─────────────────────
+```mermaid
+graph LR
+    App1[App 1] --> Backend[Backend]
+    App2[App 2] --> Backend
+    App3[App 3] --> Backend
 
-┌─────────────┐
-│   App 1     │──────┐
-└─────────────┘      │
-                     │      ┌─────────────┐
-┌─────────────┐      ├─────▶│   Backend   │
-│   App 2     │──────┤      └─────────────┘
-└─────────────┘      │
-                     │
-┌─────────────┐      │
-│   App 3     │──────┘
-└─────────────┘
+    style App1 fill:#3b82f6,color:#fff
+    style App2 fill:#3b82f6,color:#fff
+    style App3 fill:#3b82f6,color:#fff
+    style Backend fill:#8b5cf6,color:#fff
 ```
 
 **When this works:**
@@ -78,23 +75,18 @@ No Collector Topology
 
 Run a Collector on each host alongside your applications.
 
-```
-Local Collector Topology
-────────────────────────
+```mermaid
+graph LR
+    subgraph Host["Host"]
+        App1[App] --> Collector[Collector<br/>local<br/>+ Host Metrics]
+        App2[App] --> Collector
+    end
+    Collector --> Backend[Backend]
 
-┌─────────────────────────────────────────────┐
-│                   Host                       │
-│                                             │
-│  ┌─────────────┐                            │
-│  │    App      │─────┐                      │
-│  └─────────────┘     │    ┌─────────────┐   │
-│                      ├───▶│  Collector  │───┼──▶ Backend
-│  ┌─────────────┐     │    │  (local)    │   │
-│  │    App      │─────┘    │             │   │
-│  └─────────────┘          │ + Host      │   │
-│                           │   Metrics   │   │
-│                           └─────────────┘   │
-└─────────────────────────────────────────────┘
+    style App1 fill:#3b82f6,color:#fff
+    style App2 fill:#3b82f6,color:#fff
+    style Collector fill:#10b981,color:#fff
+    style Backend fill:#8b5cf6,color:#fff
 ```
 
 **Benefits of local Collectors:**
@@ -124,24 +116,34 @@ export:
 
 Add a pool of Collectors for additional processing and buffering.
 
-```
-Collector Pool Topology
-───────────────────────
+```mermaid
+graph LR
+    LC1[App + Local<br/>Collector] --> LB[Load Balancer]
+    LC2[App + Local<br/>Collector] --> LB
+    LC3[App + Local<br/>Collector] --> LB
 
-┌───────────────┐
-│ App + Local   │───┐
-│ Collector     │   │
-└───────────────┘   │     ┌─────────────────────────┐
-                    │     │    Collector Pool       │
-┌───────────────┐   │     │                         │
-│ App + Local   │───┼────▶│  ┌─────┐ ┌─────┐      │
-│ Collector     │   │     │  │ Col │ │ Col │ ...  │───▶ Backend
-└───────────────┘   │     │  └─────┘ └─────┘      │
-                    │     │                         │
-┌───────────────┐   │     │  Load Balanced         │
-│ App + Local   │───┘     └─────────────────────────┘
-│ Collector     │
-└───────────────┘
+    subgraph Pool["Collector Pool"]
+        Col1[Collector]
+        Col2[Collector]
+        Col3[Collector]
+    end
+
+    LB --> Col1
+    LB --> Col2
+    LB --> Col3
+
+    Col1 --> Backend[Backend]
+    Col2 --> Backend
+    Col3 --> Backend
+
+    style LC1 fill:#3b82f6,color:#fff
+    style LC2 fill:#3b82f6,color:#fff
+    style LC3 fill:#3b82f6,color:#fff
+    style LB fill:#f59e0b,color:#fff
+    style Col1 fill:#10b981,color:#fff
+    style Col2 fill:#10b981,color:#fff
+    style Col3 fill:#10b981,color:#fff
+    style Backend fill:#8b5cf6,color:#fff
 ```
 
 **Why use Collector pools:**
@@ -157,28 +159,23 @@ Collector Pool Topology
 
 For complex needs, create specialized Collector deployments:
 
-```
-Specialized Collectors
-──────────────────────
+```mermaid
+graph LR
+    Gateway[Gateway<br/>Collector] --> TracesCol[Traces Collector<br/>tail sampling]
+    Gateway --> MetricsCol[Metrics Collector<br/>aggregation]
+    Gateway --> LogsCol[Logs Collector<br/>parsing]
 
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│                    ┌──────────────────┐                        │
-│                    │ Traces Collector │                        │
-│        ┌──────────▶│ (tail sampling)  │──────▶ Traces Backend  │
-│        │           └──────────────────┘                        │
-│        │                                                        │
-│  ┌─────┴─────┐     ┌──────────────────┐                        │
-│  │  Gateway  │────▶│ Metrics Collector│──────▶ Metrics Backend │
-│  │ Collector │     │ (aggregation)    │                        │
-│  └─────┬─────┘     └──────────────────┘                        │
-│        │                                                        │
-│        │           ┌──────────────────┐                        │
-│        └──────────▶│ Logs Collector   │──────▶ Logs Backend    │
-│                    │ (parsing)        │                        │
-│                    └──────────────────┘                        │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+    TracesCol --> TracesBackend[Traces Backend]
+    MetricsCol --> MetricsBackend[Metrics Backend]
+    LogsCol --> LogsBackend[Logs Backend]
+
+    style Gateway fill:#f59e0b,color:#fff
+    style TracesCol fill:#3b82f6,color:#fff
+    style MetricsCol fill:#10b981,color:#fff
+    style LogsCol fill:#8b5cf6,color:#fff
+    style TracesBackend fill:#3b82f6,color:#fff
+    style MetricsBackend fill:#10b981,color:#fff
+    style LogsBackend fill:#8b5cf6,color:#fff
 ```
 
 **Reasons for specialized Collectors:**
@@ -223,32 +220,35 @@ processors:
 
 **Sampling:** Keep a representative subset of data.
 
-```
-Sampling Strategies
-───────────────────
+```mermaid
+graph TD
+    subgraph Head["Head-Based Sampling"]
+        H1[Decision at trace START]
+        H2[Simple: Keep 10% of traces]
+        H3[Fast, low overhead]
+        H4[Risk: May miss important traces]
+        H1 --> H2 --> H3 --> H4
+    end
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Head-Based Sampling                                             │
-│                                                                 │
-│ Decision at trace START                                         │
-│ • Simple: "Keep 10% of traces"                                 │
-│ • Fast, low overhead                                           │
-│ • Risk: May miss important traces (errors, slow requests)      │
-├─────────────────────────────────────────────────────────────────┤
-│ Tail-Based Sampling                                             │
-│                                                                 │
-│ Decision at trace END                                           │
-│ • Smart: "Keep all errors, sample 10% of fast traces"          │
-│ • Requires collecting all spans first                          │
-│ • Higher resource usage, more complex                          │
-├─────────────────────────────────────────────────────────────────┤
-│ Storage-Based Sampling                                          │
-│                                                                 │
-│ Decision in analysis tool                                       │
-│ • Store 100% for 1 week (hot storage)                         │
-│ • Sample 10% for historical (cold storage)                     │
-│ • Best of both worlds, higher initial cost                     │
-└─────────────────────────────────────────────────────────────────┘
+    subgraph Tail["Tail-Based Sampling"]
+        T1[Decision at trace END]
+        T2[Smart: Keep all errors<br/>sample 10% of fast traces]
+        T3[Requires collecting all spans first]
+        T4[Higher resource usage, more complex]
+        T1 --> T2 --> T3 --> T4
+    end
+
+    subgraph Storage["Storage-Based Sampling"]
+        S1[Decision in analysis tool]
+        S2[Store 100% for 1 week hot storage]
+        S3[Sample 10% for historical cold storage]
+        S4[Best of both worlds, higher initial cost]
+        S1 --> S2 --> S3 --> S4
+    end
+
+    style Head fill:#3b82f6,color:#fff
+    style Tail fill:#10b981,color:#fff
+    style Storage fill:#8b5cf6,color:#fff
 ```
 
 **Tail-based sampling configuration:**
@@ -315,28 +315,27 @@ processors:
 
 **Backpressure** occurs when producers send faster than consumers can receive:
 
-```
-Backpressure Flow
-─────────────────
+```mermaid
+graph TD
+    subgraph Normal["Normal Flow"]
+        N1[App: 100 spans/s] --> N2[Collector: 100 spans/s] --> N3[Backend ✓]
+    end
 
-Normal Flow:
-App ──[100 spans/s]──▶ Collector ──[100 spans/s]──▶ Backend ✓
+    subgraph Backpressure["Backpressure"]
+        B1[App: 1000 spans/s] --> B2[Collector: 100 spans/s]
+        B2 --> B3[Buffer fills]
+        B3 --> B4[Buffer full → DROP DATA 😱]
+    end
 
-Backpressure:
-App ──[1000 spans/s]──▶ Collector ──[100 spans/s]──▶ Backend
-                            │
-                            ▼
-                       Buffer fills
-                            │
-                            ▼
-                    Buffer full → DROP DATA 😱
+    subgraph WithPool["With Collector Pool"]
+        P1[App: 1000 spans/s] --> P2[Load Balancer]
+        P2 --> P3[Collector Pool<br/>More buffer capacity!]
+        P3 --> P4[Backend]
+    end
 
-With Collector Pool:
-App ──[1000 spans/s]──▶ Load Balancer ──▶ Collector Pool ──▶ Backend
-                            │                   │
-                            ▼                   ▼
-                      Distributes         More buffer
-                      across pool         capacity!
+    style Normal fill:#10b981,color:#fff
+    style Backpressure fill:#ef4444,color:#fff
+    style WithPool fill:#3b82f6,color:#fff
 ```
 
 **Managing backpressure:**
@@ -365,31 +364,29 @@ extensions:
 
 ## 4. Collector Security
 
-```
-Security Best Practices
-───────────────────────
+```mermaid
+graph TD
+    subgraph Network["Network Security"]
+        Net1[✓ Bind to localhost for local traffic<br/>endpoint: localhost:4317 NOT 0.0.0.0:4317]
+        Net2[✓ Use TLS for remote traffic]
+        Net3[✓ Implement authentication for external receivers]
+    end
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Network Security                                                │
-│                                                                 │
-│ ✓ Bind to localhost for local traffic                         │
-│   endpoint: "localhost:4317"  NOT  "0.0.0.0:4317"             │
-│                                                                 │
-│ ✓ Use TLS for remote traffic                                  │
-│ ✓ Implement authentication for external receivers              │
-├─────────────────────────────────────────────────────────────────┤
-│ Data Security                                                   │
-│                                                                 │
-│ ✓ Scrub PII in pipeline                                       │
-│ ✓ Use redaction processors                                     │
-│ ✓ Consider data residency requirements                        │
-├─────────────────────────────────────────────────────────────────┤
-│ Operational Security                                            │
-│                                                                 │
-│ ✓ Run as non-root user                                        │
-│ ✓ Use minimal Collector builds                                │
-│ ✓ Keep Collector updated                                      │
-└─────────────────────────────────────────────────────────────────┘
+    subgraph Data["Data Security"]
+        D1[✓ Scrub PII in pipeline]
+        D2[✓ Use redaction processors]
+        D3[✓ Consider data residency requirements]
+    end
+
+    subgraph Operational["Operational Security"]
+        O1[✓ Run as non-root user]
+        O2[✓ Use minimal Collector builds]
+        O3[✓ Keep Collector updated]
+    end
+
+    style Network fill:#3b82f6,color:#fff
+    style Data fill:#10b981,color:#fff
+    style Operational fill:#8b5cf6,color:#fff
 ```
 
 ---
@@ -398,74 +395,66 @@ Security Best Practices
 
 The OpenTelemetry Operator supports multiple deployment modes:
 
-```
-Kubernetes Deployment Options
-─────────────────────────────
+```mermaid
+graph TD
+    subgraph DaemonSet["DaemonSet - One Collector per node"]
+        DS1[Node 1<br/>Collector + Pods]
+        DS2[Node 2<br/>Collector + Pods]
+        DS3[Node 3<br/>Collector + Pods]
+        DS4[Good for: Host metrics,<br/>shared by all pods on node]
+    end
 
-┌─────────────────────────────────────────────────────────────────┐
-│ DaemonSet                                                       │
-│                                                                 │
-│ One Collector per node                                         │
-│ Good for: Host metrics, shared by all pods on node            │
-│                                                                 │
-│ Node 1        Node 2        Node 3                             │
-│ ┌────────┐   ┌────────┐   ┌────────┐                          │
-│ │Collector│   │Collector│   │Collector│                         │
-│ │  +Pods  │   │  +Pods  │   │  +Pods  │                         │
-│ └────────┘   └────────┘   └────────┘                          │
-├─────────────────────────────────────────────────────────────────┤
-│ Sidecar                                                         │
-│                                                                 │
-│ One Collector per pod                                          │
-│ Good for: Pod isolation, fast local export                    │
-│                                                                 │
-│ ┌─────────────────────┐                                        │
-│ │ Pod                 │                                        │
-│ │ ┌─────┐ ┌─────────┐ │                                        │
-│ │ │ App │─│Collector│─┼──▶                                     │
-│ │ └─────┘ └─────────┘ │                                        │
-│ └─────────────────────┘                                        │
-├─────────────────────────────────────────────────────────────────┤
-│ Deployment (Pool)                                               │
-│                                                                 │
-│ Scalable Collector pool                                        │
-│ Good for: Central processing, heavy transformations            │
-│                                                                 │
-│      ┌─────────┐ ┌─────────┐ ┌─────────┐                      │
-│      │Collector│ │Collector│ │Collector│                       │
-│      └─────────┘ └─────────┘ └─────────┘                      │
-│            └──────────┬──────────┘                             │
-│                  Load Balancer                                  │
-└─────────────────────────────────────────────────────────────────┘
+    subgraph Sidecar["Sidecar - One Collector per pod"]
+        SC1[Pod: App + Collector]
+        SC2[Good for: Pod isolation,<br/>fast local export]
+    end
+
+    subgraph Deployment["Deployment Pool - Scalable Collector pool"]
+        DP1[Collector 1]
+        DP2[Collector 2]
+        DP3[Collector 3]
+        DP4[Good for: Central processing,<br/>heavy transformations]
+        DP5[Load Balancer]
+        DP5 --> DP1
+        DP5 --> DP2
+        DP5 --> DP3
+    end
+
+    style DaemonSet fill:#3b82f6,color:#fff
+    style Sidecar fill:#10b981,color:#fff
+    style Deployment fill:#8b5cf6,color:#fff
 ```
 
 ---
 
 ## 6. Managing Telemetry Costs
 
-```
-Cost Management Strategies (Priority Order)
-──────────────────────────────────────────
+```mermaid
+graph TD
+    Cost1[1. Don't collect what you don't need]
+    Cost1 --> C1A[Filter health checks, debug spans]
+    Cost1 --> C1B[Remove unused attributes]
+    Cost1 --> C1C[Set appropriate retention policies]
 
-1. Don't collect what you don't need
-   ├── Filter health checks, debug spans
-   ├── Remove unused attributes
-   └── Set appropriate retention policies
+    Cost2[2. Compress aggressively]
+    Cost2 --> C2A[Use OTel Arrow for high-volume egress]
+    Cost2 --> C2B[Enable gzip compression]
+    Cost2 --> C2C[Batch efficiently]
 
-2. Compress aggressively
-   ├── Use OTel Arrow for high-volume egress
-   ├── Enable gzip compression
-   └── Batch efficiently
+    Cost3[3. Transform to reduce cardinality]
+    Cost3 --> C3A[Aggregate metrics where possible]
+    Cost3 --> C3B[Convert traces to metrics for counts/histograms]
+    Cost3 --> C3C[Remove high-cardinality attributes]
 
-3. Transform to reduce cardinality
-   ├── Aggregate metrics where possible
-   ├── Convert traces to metrics for counts/histograms
-   └── Remove high-cardinality attributes
+    Cost4[4. Sample intelligently last resort]
+    Cost4 --> C4A[Keep all errors]
+    Cost4 --> C4B[Keep all slow traces]
+    Cost4 --> C4C[Sample normal traces]
 
-4. Sample intelligently (last resort)
-   ├── Keep all errors
-   ├── Keep all slow traces
-   └── Sample "normal" traces
+    style Cost1 fill:#10b981,color:#fff
+    style Cost2 fill:#3b82f6,color:#fff
+    style Cost3 fill:#8b5cf6,color:#fff
+    style Cost4 fill:#f59e0b,color:#fff
 ```
 
 > **💡 Insight**

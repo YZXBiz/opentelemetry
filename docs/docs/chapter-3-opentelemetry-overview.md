@@ -4,6 +4,8 @@ title: "Chapter 3: OpenTelemetry Overview"
 description: "Understanding the three primary signals (traces, metrics, logs), context propagation, and semantic conventions"
 ---
 
+import { FlowDiagram, ComparisonDiagram, LayerDiagram, PipelineDiagram } from '@site/src/components/diagrams';
+
 # 🔍 Chapter 3: OpenTelemetry Overview
 
 > **"You can't communicate complexity, only an awareness of it."**
@@ -43,20 +45,15 @@ description: "Understanding the three primary signals (traces, metrics, logs), c
 
 OpenTelemetry supports three primary signals, each optimized for different use cases:
 
-```
-The Three Signals
-─────────────────
+```mermaid
+graph LR
+    Metrics["📊 Metrics<br/>How much?<br/>Aggregated measurements<br/>over time"]
+    Traces["📍 Traces<br/>Where?<br/>Request flow<br/>across services"]
+    Logs["📝 Logs<br/>What happened?<br/>Discrete events<br/>with detailed information"]
 
-┌───────────────────────────────────────────────────────────┐
-│                                                           │
-│   📊 Metrics     📍 Traces      📝 Logs                   │
-│   "How much?"    "Where?"       "What happened?"          │
-│                                                           │
-│   Aggregated     Request flow   Discrete events           │
-│   measurements   across         with detailed             │
-│   over time      services       information               │
-│                                                           │
-└───────────────────────────────────────────────────────────┘
+    style Metrics fill:#3b82f6,color:#fff
+    style Traces fill:#8b5cf6,color:#fff
+    style Logs fill:#10b981,color:#fff
 ```
 
 ### 2.1. Traces
@@ -65,35 +62,24 @@ The Three Signals
 
 **In technical terms:** A trace represents a single request's journey through a distributed system, consisting of spans that capture individual operations.
 
-```
-Trace Structure
-───────────────
+```mermaid
+graph TD
+    Root["Span: HTTP GET /checkout<br/>Duration: 450ms<br/>Service: api-gateway<br/>Trace ID: abc123"]
+    Auth["Span: AuthService.validate<br/>Duration: 50ms<br/>Service: auth-service"]
+    Cart["Span: CartService.getItems<br/>Duration: 120ms<br/>Service: cart-service"]
+    DB["Span: PostgreSQL SELECT<br/>Duration: 45ms"]
+    Payment["Span: PaymentService.charge<br/>Duration: 200ms"]
 
-Trace ID: abc123 (unique identifier for the entire journey)
+    Root --> Auth
+    Root --> Cart
+    Cart --> DB
+    Root --> Payment
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Span: HTTP GET /checkout (parent span)                          │
-│ Duration: 450ms                                                  │
-│ Service: api-gateway                                             │
-│ ┌─────────────────────────────────────────────────────────────┐ │
-│ │ Span: AuthService.validate (child span)                     │ │
-│ │ Duration: 50ms                                               │ │
-│ │ Service: auth-service                                        │ │
-│ └─────────────────────────────────────────────────────────────┘ │
-│ ┌─────────────────────────────────────────────────────────────┐ │
-│ │ Span: CartService.getItems (child span)                     │ │
-│ │ Duration: 120ms                                              │ │
-│ │ Service: cart-service                                        │ │
-│ │ ┌─────────────────────────────────────────────────────────┐ │ │
-│ │ │ Span: PostgreSQL SELECT (grandchild span)               │ │ │
-│ │ │ Duration: 45ms                                           │ │ │
-│ │ └─────────────────────────────────────────────────────────┘ │ │
-│ └─────────────────────────────────────────────────────────────┘ │
-│ ┌─────────────────────────────────────────────────────────────┐ │
-│ │ Span: PaymentService.charge (child span)                    │ │
-│ │ Duration: 200ms                                              │ │
-│ └─────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
+    style Root fill:#3b82f6,color:#fff
+    style Auth fill:#8b5cf6,color:#fff
+    style Cart fill:#8b5cf6,color:#fff
+    style DB fill:#10b981,color:#fff
+    style Payment fill:#8b5cf6,color:#fff
 ```
 
 **Key trace concepts:**
@@ -117,26 +103,15 @@ Trace ID: abc123 (unique identifier for the entire journey)
 
 **In technical terms:** Metrics are numerical measurements collected at regular intervals, optimized for aggregation and alerting.
 
-```
-Metric Types
-────────────
+```mermaid
+graph TD
+    Counter["Counter<br/>• Always increases or resets<br/>• Example: http_requests_total = 15,234<br/>• Use for: Counting events, calculating rates"]
+    Gauge["Gauge<br/>• Can go up or down<br/>• Example: current_temperature = 72.5<br/>• Use for: Current values that fluctuate"]
+    Histogram["Histogram<br/>• Samples observations into buckets<br/>• Example: request_duration_seconds<br/>• Use for: Latency distributions, percentiles"]
 
-┌────────────────────────────────────────────────────────────────┐
-│ Counter                                                        │
-│ • Always increases (or resets)                                 │
-│ • Example: http_requests_total = 15,234                        │
-│ • Use for: Counting events, calculating rates                  │
-├────────────────────────────────────────────────────────────────┤
-│ Gauge                                                          │
-│ • Can go up or down                                            │
-│ • Example: current_temperature = 72.5                          │
-│ • Use for: Current values that fluctuate                       │
-├────────────────────────────────────────────────────────────────┤
-│ Histogram                                                      │
-│ • Samples observations into buckets                            │
-│ • Example: request_duration_seconds                            │
-│ • Use for: Latency distributions, percentiles                  │
-└────────────────────────────────────────────────────────────────┘
+    style Counter fill:#3b82f6,color:#fff
+    style Gauge fill:#8b5cf6,color:#fff
+    style Histogram fill:#10b981,color:#fff
 ```
 
 **Metrics vs. Traces:**
@@ -158,34 +133,18 @@ Metric Types
 
 **In technical terms:** Logs are timestamped, structured records of discrete events that occur during system operation.
 
-```
-Log Evolution
-─────────────
+```mermaid
+graph TD
+    Traditional["Traditional Log unstructured<br/>2024-01-15 14:32:05 ERROR Failed to connect to database"]
+    Structured["Structured Log better<br/>timestamp, level, message, service"]
+    OTel["OpenTelemetry Log best<br/>timestamp, severity, body<br/>+ trace_id, span_id<br/>+ semantic attributes"]
 
-Traditional Log (unstructured):
-"2024-01-15 14:32:05 ERROR Failed to connect to database"
+    Traditional --> Structured
+    Structured --> OTel
 
-Structured Log (better):
-{
-  "timestamp": "2024-01-15T14:32:05Z",
-  "level": "ERROR",
-  "message": "Failed to connect to database",
-  "service": "user-service"
-}
-
-OpenTelemetry Log (best):
-{
-  "timestamp": "2024-01-15T14:32:05Z",
-  "severity": "ERROR",
-  "body": "Failed to connect to database",
-  "trace_id": "abc123",      ← Links to trace!
-  "span_id": "def456",       ← Links to specific span!
-  "attributes": {
-    "db.system": "postgresql",
-    "db.name": "users",
-    "error.type": "ConnectionTimeout"
-  }
-}
+    style Traditional fill:#ef4444,color:#fff
+    style Structured fill:#f59e0b,color:#fff
+    style OTel fill:#10b981,color:#fff
 ```
 
 > **💡 Insight**
@@ -202,24 +161,18 @@ OpenTelemetry Log (best):
 
 **In technical terms:** Context is metadata that propagates through your system, linking telemetry data across service boundaries.
 
-```
-Context Propagation
-───────────────────
+```mermaid
+graph LR
+    A["Service A<br/>Create Trace Context<br/>Span A<br/>trace_id: abc<br/>span_id: 001<br/>parent: null"]
+    B["Service B<br/>Extract & Continue<br/>Span B<br/>trace_id: abc<br/>span_id: 002<br/>parent: 001"]
+    C["Service C<br/>Extract & Continue<br/>Span C<br/>trace_id: abc<br/>span_id: 003<br/>parent: 002"]
 
-Service A                    Service B                    Service C
-┌─────────────┐             ┌─────────────┐             ┌─────────────┐
-│             │   HTTP      │             │   gRPC      │             │
-│  Create     │────────────▶│  Extract    │────────────▶│  Extract    │
-│  Trace      │ Headers:    │  Continue   │ Metadata:   │  Continue   │
-│  Context    │ traceparent │  Trace      │ traceparent │  Trace      │
-│             │ tracestate  │             │ tracestate  │             │
-└─────────────┘             └─────────────┘             └─────────────┘
-      │                           │                           │
-      ▼                           ▼                           ▼
-   Span A                      Span B                      Span C
-   trace_id: abc               trace_id: abc               trace_id: abc
-   span_id: 001                span_id: 002                span_id: 003
-   parent: null                parent: 001                 parent: 002
+    A -->|"HTTP Headers:<br/>traceparent<br/>tracestate"| B
+    B -->|"gRPC Metadata:<br/>traceparent<br/>tracestate"| C
+
+    style A fill:#3b82f6,color:#fff
+    style B fill:#8b5cf6,color:#fff
+    style C fill:#10b981,color:#fff
 ```
 
 **What propagates:**
@@ -266,24 +219,15 @@ cloud.region: "us-east-1"
 
 **In technical terms:** Semantic conventions are standardized attribute names and values defined by OpenTelemetry.
 
-```
-Semantic Conventions Examples
-─────────────────────────────
+```mermaid
+graph TD
+    HTTP["HTTP Requests<br/>• http.request.method → GET, POST<br/>• http.response.status_code → 200, 404, 500<br/>• url.path → /api/users"]
+    DB["Database Operations<br/>• db.system → postgresql, mysql<br/>• db.name → users_db<br/>• db.operation → SELECT, INSERT"]
+    MSG["Messaging<br/>• messaging.system → kafka, rabbitmq<br/>• messaging.destination.name → orders-queue<br/>• messaging.operation → publish, receive"]
 
-HTTP Requests:
-• http.request.method     → "GET", "POST", etc.
-• http.response.status_code → 200, 404, 500
-• url.path                → "/api/users"
-
-Database Operations:
-• db.system              → "postgresql", "mysql"
-• db.name                → "users_db"
-• db.operation           → "SELECT", "INSERT"
-
-Messaging:
-• messaging.system       → "kafka", "rabbitmq"
-• messaging.destination.name → "orders-queue"
-• messaging.operation    → "publish", "receive"
+    style HTTP fill:#3b82f6,color:#fff
+    style DB fill:#8b5cf6,color:#fff
+    style MSG fill:#10b981,color:#fff
 ```
 
 **Why conventions matter:**
@@ -307,18 +251,18 @@ Messaging:
 
 **In technical terms:** OTLP is the native protocol for transmitting telemetry data, supporting gRPC and HTTP transports.
 
-```
-OTLP in Action
-──────────────
+```mermaid
+graph LR
+    App["Your App<br/>SDK<br/>Traces<br/>Metrics<br/>Logs"]
+    Collector["Collector<br/>Receiver<br/>↓<br/>Process<br/>↓<br/>Exporter"]
+    Backend["Backend<br/>Any OTLP<br/>Backend"]
 
-Your App                 Collector              Backend
-┌──────────┐            ┌──────────┐           ┌──────────┐
-│   SDK    │───OTLP────▶│ Receiver │           │          │
-│          │ (gRPC or   │    ↓     │           │  Any     │
-│ Traces   │  HTTP)     │ Process  │───OTLP───▶│  OTLP    │
-│ Metrics  │            │    ↓     │   or      │  Backend │
-│ Logs     │            │ Exporter │   other   │          │
-└──────────┘            └──────────┘           └──────────┘
+    App -->|"OTLP<br/>gRPC or HTTP"| Collector
+    Collector -->|"OTLP or<br/>other"| Backend
+
+    style App fill:#3b82f6,color:#fff
+    style Collector fill:#8b5cf6,color:#fff
+    style Backend fill:#10b981,color:#fff
 ```
 
 **OTLP characteristics:**
@@ -336,24 +280,15 @@ Your App                 Collector              Backend
 
 OpenTelemetry is designed for long-term stability:
 
-```
-Stability Guarantees
-────────────────────
+```mermaid
+graph TD
+    Stable["Stable APIs v1.0+<br/>• Never break backward compatibility<br/>• Safe to use in production<br/>• Any changes are purely additive"]
+    Experimental["Experimental Features<br/>• May change based on feedback<br/>• Clearly marked in documentation<br/>• Move to stable after proven"]
+    Deprecated["Deprecated Features<br/>• Will work for at least 1 year<br/>• Clear migration path provided<br/>• Warnings in documentation"]
 
-Stable APIs (v1.0+):
-├── Will never break backward compatibility
-├── Safe to use in production
-└── Any changes are purely additive
-
-Experimental Features:
-├── May change based on feedback
-├── Clearly marked in documentation
-└── Move to stable after proven
-
-Deprecated Features:
-├── Will work for at least 1 year
-├── Clear migration path provided
-└── Warnings in documentation
+    style Stable fill:#10b981,color:#fff
+    style Experimental fill:#f59e0b,color:#fff
+    style Deprecated fill:#ef4444,color:#fff
 ```
 
 > **💡 Insight**

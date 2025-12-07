@@ -61,25 +61,20 @@ This guide is designed for:
 
 ## 3. How to Use This Guide
 
-```
-Recommended Path for Beginners
-──────────────────────────────
-Part I: Foundations (Chapters 1-4)
-        │
-        ▼
-    Build mental models
-        │
-        ▼
-Part II: Implementation (Chapters 5-7)
-        │
-        ▼
-    Get hands-on experience
-        │
-        ▼
-Part III: Operations (Chapters 8-9)
-        │
-        ▼
-    Scale your practice
+```mermaid
+graph TD
+    A["📖 Part I: Foundations<br/>(Chapters 1-4)"] --> B["Build mental models"]
+    B --> C["🔧 Part II: Implementation<br/>(Chapters 5-7)"]
+    C --> D["Get hands-on experience"]
+    D --> E["🚀 Part III: Operations<br/>(Chapters 8-9)"]
+    E --> F["Scale your practice"]
+
+    style A fill:#3b82f6,color:#fff
+    style B fill:#3b82f6,color:#fff
+    style C fill:#8b5cf6,color:#fff
+    style D fill:#8b5cf6,color:#fff
+    style E fill:#10b981,color:#fff
+    style F fill:#10b981,color:#fff
 ```
 
 **If you're new to OpenTelemetry:** Start with Part I (Foundations) to build a solid mental model before diving into implementation.
