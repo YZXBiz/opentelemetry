@@ -12,9 +12,9 @@ const config: Config = {
   },
 
   // GitHub Pages deployment configuration
-  url: 'https://Jackson.github.io',
+  url: 'https://YZXBiz.github.io',
   baseUrl: '/opentelemetry/',
-  organizationName: 'Jackson',
+  organizationName: 'YZXBiz',
   projectName: 'opentelemetry',
   deploymentBranch: 'gh-pages',
   trailingSlash: false,
@@ -34,7 +34,7 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           routeBasePath: '/', // Docs at root (no /docs prefix)
-          editUrl: 'https://github.com/Jackson/opentelemetry/tree/main/docs/',
+          editUrl: 'https://github.com/YZXBiz/opentelemetry/tree/master/docs/',
         },
         blog: false, // Disable blog
         theme: {
@@ -65,7 +65,7 @@ const config: Config = {
           label: 'Guide',
         },
         {
-          href: 'https://github.com/Jackson/opentelemetry',
+          href: 'https://github.com/YZXBiz/opentelemetry',
           label: 'GitHub',
           position: 'right',
         },
@@ -93,7 +93,7 @@ const config: Config = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/Jackson/opentelemetry',
+              href: 'https://github.com/YZXBiz/opentelemetry',
             },
           ],
         },
