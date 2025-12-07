@@ -37,6 +37,14 @@ const sidebars: SidebarsConfig = {
         'chapter-9-rolling-out-observability',
       ],
     },
+    {
+      type: 'category',
+      label: 'Extras',
+      collapsed: false,
+      items: [
+        'interactive-demo',
+      ],
+    },
   ],
 };
 
